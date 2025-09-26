@@ -1,0 +1,814 @@
+# Copyright (c) 2024 CosyVoice2 ComfyUI Nodes
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import sys
+import torch
+import torchaudio
+import numpy as np
+from typing import Dict, Any, Union, Generator
+
+# 添加当前目录到Python路径中，以便导入cosyvoice模块
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# 添加third_party/Matcha-TTS到路径中，以便导入CosyVoice
+sys.path.append(os.path.join(current_dir, 'third_party', 'Matcha-TTS'))
+from cosyvoice.cli.cosyvoice import CosyVoice2
+from cosyvoice.utils.file_utils import load_wav
+
+# 尝试导入ComfyUI相关模块
+try:
+    import comfy
+    from comfy.model_management import get_torch_device
+    import folder_paths
+    COMFYUI_AVAILABLE = True
+    
+    # 获取ComfyUI的模型目录
+    def get_comfyui_model_dir():
+        """获取ComfyUI的模型目录"""
+        try:
+            # 使用folder_paths获取模型目录
+            if hasattr(folder_paths, 'models_dir'):
+                return folder_paths.models_dir
+            
+            # 从folder_paths获取base_path，然后构建models目录
+            if hasattr(folder_paths, 'base_path'):
+                return os.path.join(folder_paths.base_path, "models")
+            
+            # 尝试从ComfyUI的配置中获取模型目录
+            if hasattr(comfy, 'model_management') and hasattr(comfy.model_management, 'models_directory'):
+                return comfy.model_management.models_directory
+            
+            # 尝试从ComfyUI的路径推断模型目录
+            try:
+                import comfy_path
+                comfy_root = os.path.dirname(os.path.dirname(comfy_path.__file__))
+                models_dir = os.path.join(comfy_root, 'models')
+                
+                # 如果模型目录不存在，尝试其他可能的路径
+                if not os.path.exists(models_dir):
+                    # 尝试在ComfyUI根目录下查找models目录
+                    for root, dirs, files in os.walk(comfy_root):
+                        if 'models' in dirs:
+                            models_dir = os.path.join(root, 'models')
+                            break
+                
+                return models_dir
+            except ImportError:
+                pass
+            
+            # 尝试从当前工作目录推断ComfyUI模型目录
+            current_dir = os.getcwd()
+            if 'ComfyUI' in current_dir:
+                # 尝试找到ComfyUI根目录
+                comfyui_root = current_dir
+                while 'ComfyUI' in comfyui_root and os.path.basename(comfyui_root) != 'ComfyUI':
+                    comfyui_root = os.path.dirname(comfyui_root)
+                
+                if os.path.basename(comfyui_root) == 'ComfyUI':
+                    models_dir = os.path.join(comfyui_root, 'models')
+                    if os.path.exists(models_dir):
+                        return models_dir
+            
+            # 尝试从环境变量获取ComfyUI模型目录
+            if 'COMFYUI_MODEL_PATH' in os.environ:
+                return os.environ['COMFYUI_MODEL_PATH']
+            
+            # 尝试常见的ComfyUI模型目录路径
+            common_paths = [
+                os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'models'),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(current_dir))), 'models'),
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))), 'models'),
+            ]
+            
+            for path in common_paths:
+                if os.path.exists(path):
+                    return path
+            
+            return None
+        except Exception as e:
+            print(f"Warning: Failed to get ComfyUI model directory: {e}")
+            return None
+    
+    # 获取ComfyUI模型目录
+    COMFYUI_MODEL_DIR = get_comfyui_model_dir()
+    if COMFYUI_MODEL_DIR:
+        print(f"ComfyUI model directory found: {COMFYUI_MODEL_DIR}")
+    else:
+        print("Warning: ComfyUI model directory not found, using default paths")
+except ImportError:
+    COMFYUI_AVAILABLE = False
+    COMFYUI_MODEL_DIR = None
+
+# 定义CosyVoice2模型类型
+class CosyVoice2ModelType:
+    pass
+
+# 定义音频数据类型
+class CosyVoice2Audio:
+    def __init__(self, waveform: torch.Tensor, sample_rate: int):
+        self.waveform = waveform
+        self.sample_rate = sample_rate
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "waveform": self.waveform,
+            "sample_rate": self.sample_rate
+        }
+
+class CosyVoice2Loader:
+    """加载CosyVoice2模型"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        # 设置默认模型目录
+        default_model_dir = "pretrained_models/CosyVoice2-0.5B"
+        
+        # 如果ComfyUI模型目录可用，则使用它作为默认路径
+        if COMFYUI_MODEL_DIR:
+            # 创建CosyVoice模型子目录
+            cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
+            default_model_dir = os.path.join(cosyvoice_model_dir, "CosyVoice2-0.5B")
+            
+            # 确保目录存在
+            os.makedirs(cosyvoice_model_dir, exist_ok=True)
+        
+        return {
+            "required": {
+                "model_dir": ("STRING", {"default": default_model_dir}),
+            },
+            "optional": {
+                "load_jit": ("BOOLEAN", {"default": False}),
+                "load_trt": ("BOOLEAN", {"default": False}),
+                "load_vllm": ("BOOLEAN", {"default": False}),
+                "fp16": ("BOOLEAN", {"default": False}),
+                "device": (["auto", "cpu", "cuda"], {"default": "auto"}),
+                "auto_download": ("BOOLEAN", {"default": True}),
+            }
+        }
+    
+    RETURN_TYPES = ("COSYVOICE2_MODEL",)
+    RETURN_NAMES = ("model",)
+    FUNCTION = "load_model"
+    CATEGORY = "CosyVoice2/Loaders"
+    
+    def load_model(self, model_dir: str, load_jit: bool = False, load_trt: bool = False, 
+                  load_vllm: bool = False, fp16: bool = False, device: str = "auto",
+                  auto_download: bool = True):
+        try:
+            # 如果ComfyUI模型目录可用，确保模型目录在ComfyUI模型目录下
+            if COMFYUI_MODEL_DIR and not model_dir.startswith(COMFYUI_MODEL_DIR):
+                # 确定模型名称
+                model_name = os.path.basename(model_dir)
+                if not model_name:
+                    model_name = "CosyVoice2-0.5B"
+                
+                # 创建CosyVoice模型子目录
+                cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
+                os.makedirs(cosyvoice_model_dir, exist_ok=True)
+                
+                # 更新模型目录路径
+                model_dir = os.path.join(cosyvoice_model_dir, model_name)
+                print(f"Using ComfyUI model directory: {model_dir}")
+            
+            # 检查模型目录是否存在
+            if not os.path.exists(model_dir):
+                if auto_download:
+                    # 尝试从modelscope下载
+                    try:
+                        from modelscope import snapshot_download
+                        print(f"Model not found at {model_dir}. Attempting to download automatically...")
+                        
+                        # 根据model_dir确定模型ID
+                        model_id = None
+                        if "CosyVoice2-0.5B" in model_dir:
+                            model_id = "iic/CosyVoice2-0.5B"
+                        elif "CosyVoice-300M" in model_dir:
+                            model_id = "iic/CosyVoice-300M"
+                        elif "CosyVoice-300M-SFT" in model_dir:
+                            model_id = "iic/CosyVoice-300M-SFT"
+                        elif "CosyVoice-300M-Instruct" in model_dir:
+                            model_id = "iic/CosyVoice-300M-Instruct"
+                        elif "CosyVoice-ttsfrd" in model_dir:
+                            model_id = "iic/CosyVoice-ttsfrd"
+                        else:
+                            # 尝试直接使用model_dir作为model_id
+                            model_id = model_dir
+                        
+                        # 下载模型
+                        print(f"Downloading model {model_id}...")
+                        model_dir = snapshot_download(model_id, local_dir=model_dir)
+                        print(f"Model downloaded to {model_dir}")
+                    except ImportError:
+                        raise ImportError("modelscope not installed. Please install it with 'pip install modelscope' or provide a valid model directory.")
+                    except Exception as e:
+                        raise ValueError(f"Failed to download model {model_dir}: {str(e)}")
+                else:
+                    raise FileNotFoundError(f"Model directory not found: {model_dir}. Enable auto_download to download automatically.")
+            
+            # 确定设备
+            if device == "auto":
+                if COMFYUI_AVAILABLE:
+                    device = get_torch_device()
+                else:
+                    device = "cuda" if torch.cuda.is_available() else "cpu"
+            
+            # 加载CosyVoice2模型
+            print(f"Loading CosyVoice2 model from {model_dir}...")
+            model = CosyVoice2(model_dir, load_jit=load_jit, load_trt=load_trt, 
+                              load_vllm=load_vllm, fp16=fp16)
+            
+            # 将模型移动到指定设备
+            if hasattr(model, 'llm') and model.llm is not None:
+                model.llm = model.llm.to(device)
+            if hasattr(model, 'flow') and model.flow is not None:
+                model.flow = model.flow.to(device)
+            if hasattr(model, 'hift') and model.hift is not None:
+                model.hift = model.hift.to(device)
+            
+            # 保存设备信息
+            model.device = device
+            print(f"CosyVoice2 model loaded successfully on {device}")
+            
+            return (model,)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load CosyVoice2 model: {str(e)}")
+
+class LoadAudio:
+    """加载音频文件或处理音频数据"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "audio_path": ("STRING", {"default": "./asset/zero_shot_prompt.wav"}),
+            },
+            "optional": {
+                "audio_data": ("AUDIO",),
+                "target_sample_rate": ("INT", {"default": 16000, "min": 8000, "max": 48000}),
+            }
+        }
+    
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
+    FUNCTION = "load_audio"
+    CATEGORY = "CosyVoice2/Audio"
+    
+    def load_audio(self, audio_path: str = "", audio_data: Dict[str, Any] = None, target_sample_rate: int = 16000):
+        try:
+            # 如果提供了音频数据，直接使用它
+            if audio_data is not None:
+                waveform = audio_data["waveform"]
+                sample_rate = audio_data["sample_rate"]
+                
+                # 如果需要重采样
+                if sample_rate != target_sample_rate:
+                    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=target_sample_rate)
+                    waveform = resampler(waveform)
+                    sample_rate = target_sample_rate
+                
+                # 确保音频形状为[B, C, T]格式
+                if waveform.dim() == 1:
+                    # 单声道音频，形状为[T] -> [1, 1, T]
+                    waveform = waveform.unsqueeze(0).unsqueeze(0)
+                elif waveform.dim() == 2:
+                    # 可能是[B, T]或[C, T]，假设是[B, T] -> [B, 1, T]
+                    waveform = waveform.unsqueeze(1)
+                
+                # 转换为ComfyUI的AUDIO格式
+                audio_dict = {
+                    "waveform": waveform,
+                    "sample_rate": sample_rate
+                }
+                
+                return (audio_dict,)
+            
+            # 如果没有提供音频数据，尝试从文件路径加载
+            if audio_path and os.path.exists(audio_path):
+                # 使用CosyVoice的load_wav函数加载音频
+                speech = load_wav(audio_path, target_sample_rate)
+                
+                # 确保音频形状为[B, C, T]格式
+                if speech.dim() == 1:
+                    # 单声道音频，形状为[T] -> [1, 1, T]
+                    speech = speech.unsqueeze(0).unsqueeze(0)
+                elif speech.dim() == 2:
+                    # 可能是[B, T]或[C, T]，假设是[B, T] -> [B, 1, T]
+                    speech = speech.unsqueeze(1)
+                
+                # 转换为ComfyUI的AUDIO格式
+                audio_dict = {
+                    "waveform": speech,
+                    "sample_rate": target_sample_rate
+                }
+                
+                return (audio_dict,)
+            else:
+                # 如果既没有音频数据也没有有效的音频路径，返回错误
+                if not audio_path:
+                    raise ValueError("Either audio_data or audio_path must be provided")
+                else:
+                    raise FileNotFoundError(f"Audio file not found: {audio_path}")
+                
+        except Exception as e:
+            raise RuntimeError(f"Failed to load audio: {str(e)}")
+
+class SaveAudio:
+    """保存音频文件"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "audio": ("AUDIO",),
+                "save_path": ("STRING", {"default": "./output.wav"}),
+            }
+        }
+    
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("path",)
+    FUNCTION = "save_audio"
+    CATEGORY = "CosyVoice2/Audio"
+    OUTPUT_NODE = True
+    
+    def save_audio(self, audio: Dict[str, Any], save_path: str):
+        try:
+            waveform = audio["waveform"]
+            sample_rate = audio["sample_rate"]
+            
+            # 确保目录存在
+            os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
+            
+            # 保存音频
+            torchaudio.save(save_path, waveform, sample_rate)
+            
+            return (save_path,)
+        except Exception as e:
+            raise RuntimeError(f"Failed to save audio: {str(e)}")
+
+class CosyVoice2ZeroShot:
+    """CosyVoice2零样本语音合成"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": ("COSYVOICE2_MODEL",),
+                "tts_text": ("STRING", {"default": "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。", "multiline": True}),
+                "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
+                "prompt_audio": ("AUDIO",),
+            },
+            "optional": {
+                "zero_shot_spk_id": ("STRING", {"default": ""}),
+                "stream": ("BOOLEAN", {"default": False}),
+                "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
+                "text_frontend": ("BOOLEAN", {"default": True}),
+            }
+        }
+    
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
+    FUNCTION = "zero_shot"
+    CATEGORY = "CosyVoice2/Inference"
+    
+    def zero_shot(self, model: CosyVoice2, tts_text: str, prompt_text: str, 
+                 prompt_audio: Dict[str, Any], zero_shot_spk_id: str = "", 
+                 stream: bool = False, speed: float = 1.0, text_frontend: bool = True):
+        try:
+            # 获取音频和采样率
+            prompt_speech_16k = prompt_audio["waveform"]
+            sample_rate = prompt_audio["sample_rate"]
+            
+            # 确保音频采样率为16kHz
+            if sample_rate != 16000:
+                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                prompt_speech_16k = resampler(prompt_speech_16k)
+            
+            # 确保音频形状为[T]格式（CosyVoice期望的格式）
+            while prompt_speech_16k.dim() > 1:
+                # 持续压缩直到只剩一维
+                prompt_speech_16k = prompt_speech_16k[0]
+            
+            # 执行零样本推理
+            audio_generator = model.inference_zero_shot(
+                tts_text=tts_text,
+                prompt_text=prompt_text,
+                prompt_speech_16k=prompt_speech_16k,
+                zero_shot_spk_id=zero_shot_spk_id,
+                stream=stream,
+                speed=speed,
+                text_frontend=text_frontend
+            )
+            
+            # 收集所有音频片段
+            audio_chunks = []
+            for chunk in audio_generator:
+                audio_chunks.append(chunk["tts_speech"])
+            
+            # 合并所有音频片段
+            if audio_chunks:
+                combined_audio = torch.cat(audio_chunks, dim=1)
+            else:
+                raise RuntimeError("No audio generated")
+            
+            # 确保音频形状为[B, C, T]格式
+            if combined_audio.dim() == 1:  # [T]
+                combined_audio = combined_audio.unsqueeze(0).unsqueeze(0)  # [1, 1, T]
+            elif combined_audio.dim() == 2:  # [C, T]
+                combined_audio = combined_audio.unsqueeze(0)  # [1, C, T]
+            
+            # 转换为ComfyUI的AUDIO格式
+            audio_dict = {
+                "waveform": combined_audio,
+                "sample_rate": model.sample_rate
+            }
+            
+            return (audio_dict,)
+        except Exception as e:
+            raise RuntimeError(f"Zero-shot inference failed: {str(e)}")
+
+class CosyVoice2Instruct:
+    """CosyVoice2指令语音合成"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": ("COSYVOICE2_MODEL",),
+                "tts_text": ("STRING", {"default": "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。", "multiline": True}),
+                "instruct_text": ("STRING", {"default": "用四川话说这句话"}),
+                "prompt_audio": ("AUDIO",),
+            },
+            "optional": {
+                "zero_shot_spk_id": ("STRING", {"default": ""}),
+                "stream": ("BOOLEAN", {"default": False}),
+                "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
+                "text_frontend": ("BOOLEAN", {"default": True}),
+            }
+        }
+    
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
+    FUNCTION = "instruct"
+    CATEGORY = "CosyVoice2/Inference"
+    
+    def instruct(self, model: CosyVoice2, tts_text: str, instruct_text: str, 
+                prompt_audio: Dict[str, Any], zero_shot_spk_id: str = "", 
+                stream: bool = False, speed: float = 1.0, text_frontend: bool = True):
+        try:
+            # 获取音频和采样率
+            prompt_speech_16k = prompt_audio["waveform"]
+            sample_rate = prompt_audio["sample_rate"]
+            
+            # 确保音频采样率为16kHz
+            if sample_rate != 16000:
+                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                prompt_speech_16k = resampler(prompt_speech_16k)
+            
+            # 确保音频形状为[T]格式（CosyVoice期望的格式）
+            while prompt_speech_16k.dim() > 1:
+                # 持续压缩直到只剩一维
+                prompt_speech_16k = prompt_speech_16k[0]
+            
+            # 执行指令推理
+            audio_generator = model.inference_instruct2(
+                tts_text=tts_text,
+                instruct_text=instruct_text,
+                prompt_speech_16k=prompt_speech_16k,
+                zero_shot_spk_id=zero_shot_spk_id,
+                stream=stream,
+                speed=speed,
+                text_frontend=text_frontend
+            )
+            
+            # 收集所有音频片段
+            audio_chunks = []
+            for chunk in audio_generator:
+                audio_chunks.append(chunk["tts_speech"])
+            
+            # 合并所有音频片段
+            if audio_chunks:
+                combined_audio = torch.cat(audio_chunks, dim=1)
+            else:
+                raise RuntimeError("No audio generated")
+            
+            # 确保音频形状为[B, C, T]格式
+            if combined_audio.dim() == 1:  # [T]
+                combined_audio = combined_audio.unsqueeze(0).unsqueeze(0)  # [1, 1, T]
+            elif combined_audio.dim() == 2:  # [C, T]
+                combined_audio = combined_audio.unsqueeze(0)  # [1, C, T]
+            
+            # 转换为ComfyUI的AUDIO格式
+            audio_dict = {
+                "waveform": combined_audio,
+                "sample_rate": model.sample_rate
+            }
+            
+            return (audio_dict,)
+        except Exception as e:
+            raise RuntimeError(f"Instruct inference failed: {str(e)}")
+
+class CosyVoice2CrossLingual:
+    """CosyVoice2跨语言语音合成"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": ("COSYVOICE2_MODEL",),
+                "tts_text": ("STRING", {"default": "在他讲述那个荒诞故事的过程中，他突然[laughter]停下来，因为他自己也被逗笑了[laughter]。", "multiline": True}),
+                "prompt_audio": ("AUDIO",),
+            },
+            "optional": {
+                "zero_shot_spk_id": ("STRING", {"default": ""}),
+                "stream": ("BOOLEAN", {"default": False}),
+                "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
+                "text_frontend": ("BOOLEAN", {"default": True}),
+            }
+        }
+    
+    RETURN_TYPES = ("AUDIO",)
+    RETURN_NAMES = ("audio",)
+    FUNCTION = "cross_lingual"
+    CATEGORY = "CosyVoice2/Inference"
+    
+    def cross_lingual(self, model: CosyVoice2, tts_text: str, prompt_audio: Dict[str, Any], 
+                     zero_shot_spk_id: str = "", stream: bool = False, speed: float = 1.0, 
+                     text_frontend: bool = True):
+        try:
+            # 获取音频和采样率
+            prompt_speech_16k = prompt_audio["waveform"]
+            sample_rate = prompt_audio["sample_rate"]
+            
+            # 确保音频采样率为16kHz
+            if sample_rate != 16000:
+                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                prompt_speech_16k = resampler(prompt_speech_16k)
+            
+            # 确保音频形状为[T]格式（CosyVoice期望的格式）
+            while prompt_speech_16k.dim() > 1:
+                # 持续压缩直到只剩一维
+                prompt_speech_16k = prompt_speech_16k[0]
+            
+            # 执行跨语言推理
+            audio_generator = model.inference_cross_lingual(
+                tts_text=tts_text,
+                prompt_speech_16k=prompt_speech_16k,
+                zero_shot_spk_id=zero_shot_spk_id,
+                stream=stream,
+                speed=speed,
+                text_frontend=text_frontend
+            )
+            
+            # 收集所有音频片段
+            audio_chunks = []
+            for chunk in audio_generator:
+                audio_chunks.append(chunk["tts_speech"])
+            
+            # 合并所有音频片段
+            if audio_chunks:
+                combined_audio = torch.cat(audio_chunks, dim=1)
+            else:
+                raise RuntimeError("No audio generated")
+            
+            # 确保音频形状为[B, C, T]格式
+            if combined_audio.dim() == 1:  # [T]
+                combined_audio = combined_audio.unsqueeze(0).unsqueeze(0)  # [1, 1, T]
+            elif combined_audio.dim() == 2:  # [C, T]
+                combined_audio = combined_audio.unsqueeze(0)  # [1, C, T]
+            
+            # 转换为ComfyUI的AUDIO格式
+            audio_dict = {
+                "waveform": combined_audio,
+                "sample_rate": model.sample_rate
+            }
+            
+            return (audio_dict,)
+        except Exception as e:
+            raise RuntimeError(f"Cross-lingual inference failed: {str(e)}")
+
+class CosyVoice2ModelChecker:
+    """检查CosyVoice2模型是否已下载"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        # 设置默认模型目录
+        default_model_dir = "pretrained_models/CosyVoice2-0.5B"
+        
+        # 如果ComfyUI模型目录可用，则使用它作为默认路径
+        if COMFYUI_MODEL_DIR:
+            # 创建CosyVoice模型子目录
+            cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
+            default_model_dir = os.path.join(cosyvoice_model_dir, "CosyVoice2-0.5B")
+        
+        return {
+            "required": {
+                "model_dir": ("STRING", {"default": default_model_dir}),
+            }
+        }
+    
+    RETURN_TYPES = ("BOOLEAN", "STRING",)
+    RETURN_NAMES = ("model_exists", "model_path",)
+    FUNCTION = "check_model"
+    CATEGORY = "CosyVoice2/Utils"
+    
+    def check_model(self, model_dir: str):
+        try:
+            # 检查模型目录是否存在
+            model_exists = os.path.exists(model_dir) and os.path.isdir(model_dir) and os.listdir(model_dir)
+            
+            if model_exists:
+                return (True, model_dir)
+            else:
+                return (False, model_dir)
+        except Exception as e:
+            raise RuntimeError(f"Failed to check model: {str(e)}")
+
+class CosyVoice2ModelDownloader:
+    """下载CosyVoice2模型"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        # 设置默认本地目录
+        default_local_dir = "pretrained_models"
+        
+        # 如果ComfyUI模型目录可用，则使用它作为默认路径
+        if COMFYUI_MODEL_DIR:
+            # 创建CosyVoice模型子目录
+            default_local_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
+        
+        return {
+            "required": {
+                "model_type": (["CosyVoice2-0.5B", "CosyVoice-300M", "CosyVoice-300M-SFT", "CosyVoice-300M-Instruct", "CosyVoice-ttsfrd"], {"default": "CosyVoice2-0.5B"}),
+            },
+            "optional": {
+                "local_dir": ("STRING", {"default": default_local_dir}),
+                "download_ttsfrd": ("BOOLEAN", {"default": False}),
+            }
+        }
+    
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("model_path",)
+    FUNCTION = "download_model"
+    CATEGORY = "CosyVoice2/Utils"
+    OUTPUT_NODE = True
+    
+    def download_model(self, model_type: str, local_dir: str = "pretrained_models", 
+                     download_ttsfrd: bool = False):
+        try:
+            # 如果ComfyUI模型目录可用且local_dir不是ComfyUI模型目录的子目录，则使用ComfyUI模型目录
+            if COMFYUI_MODEL_DIR and not local_dir.startswith(COMFYUI_MODEL_DIR):
+                # 确定模型名称
+                model_name = os.path.basename(local_dir)
+                if not model_name or model_name == "pretrained_models":
+                    model_name = "CosyVoice"
+                
+                # 创建CosyVoice模型子目录
+                cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, model_name)
+                os.makedirs(cosyvoice_model_dir, exist_ok=True)
+                
+                # 更新local_dir路径
+                local_dir = cosyvoice_model_dir
+                print(f"Using ComfyUI model directory: {local_dir}")
+            
+            # 确保目录存在
+            os.makedirs(local_dir, exist_ok=True)
+            
+            # 尝试导入modelscope
+            try:
+                from modelscope import snapshot_download
+            except ImportError:
+                raise ImportError("modelscope not installed. Please install it with 'pip install modelscope'.")
+            
+            # 根据模型类型确定模型ID
+            model_id_map = {
+                "CosyVoice2-0.5B": "iic/CosyVoice2-0.5B",
+                "CosyVoice-300M": "iic/CosyVoice-300M",
+                "CosyVoice-300M-SFT": "iic/CosyVoice-300M-SFT",
+                "CosyVoice-300M-Instruct": "iic/CosyVoice-300M-Instruct",
+                "CosyVoice-ttsfrd": "iic/CosyVoice-ttsfrd",
+            }
+            
+            model_id = model_id_map.get(model_type)
+            if not model_id:
+                raise ValueError(f"Unknown model type: {model_type}")
+            
+            # 构建本地目录路径
+            model_local_dir = os.path.join(local_dir, model_type)
+            
+            # 检查模型是否已存在
+            if os.path.exists(model_local_dir) and os.listdir(model_local_dir):
+                print(f"Model {model_type} already exists at {model_local_dir}")
+                return (model_local_dir,)
+            
+            # 下载模型
+            print(f"Downloading model {model_type}...")
+            downloaded_path = snapshot_download(model_id, local_dir=model_local_dir)
+            print(f"Model {model_type} downloaded to {downloaded_path}")
+            
+            # 如果需要下载ttsfrd且不是已经下载的模型
+            if download_ttsfrd and model_type != "CosyVoice-ttsfrd":
+                ttsfrd_id = "iic/CosyVoice-ttsfrd"
+                ttsfrd_local_dir = os.path.join(local_dir, "CosyVoice-ttsfrd")
+                
+                if not os.path.exists(ttsfrd_local_dir) or not os.listdir(ttsfrd_local_dir):
+                    print(f"Downloading ttsfrd resources...")
+                    ttsfrd_path = snapshot_download(ttsfrd_id, local_dir=ttsfrd_local_dir)
+                    print(f"ttsfrd resources downloaded to {ttsfrd_path}")
+                else:
+                    print(f"ttsfrd resources already exist at {ttsfrd_local_dir}")
+            
+            return (downloaded_path,)
+        except Exception as e:
+            raise RuntimeError(f"Failed to download model {model_type}: {str(e)}")
+
+class CosyVoice2SaveSpeaker:
+    """保存零样本说话人信息"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": ("COSYVOICE2_MODEL",),
+                "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
+                "prompt_audio": ("AUDIO",),
+                "zero_shot_spk_id": ("STRING", {"default": "my_zero_shot_spk"}),
+            }
+        }
+    
+    RETURN_TYPES = ("COSYVOICE2_MODEL",)
+    RETURN_NAMES = ("model",)
+    FUNCTION = "save_speaker"
+    CATEGORY = "CosyVoice2/Utils"
+    
+    def save_speaker(self, model: CosyVoice2, prompt_text: str, prompt_audio: Dict[str, Any], 
+                    zero_shot_spk_id: str):
+        try:
+            # 获取音频和采样率
+            prompt_speech_16k = prompt_audio["waveform"]
+            sample_rate = prompt_audio["sample_rate"]
+            
+            # 确保音频采样率为16kHz
+            if sample_rate != 16000:
+                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                prompt_speech_16k = resampler(prompt_speech_16k)
+            
+            # 确保音频形状为[T]格式（CosyVoice期望的格式）
+            if prompt_speech_16k.dim() == 3:  # [B, C, T]
+                # 取第一个批次和第一个通道
+                prompt_speech_16k = prompt_speech_16k[0, 0, :]
+            elif prompt_speech_16k.dim() == 2:  # [B, T]或[C, T]
+                # 假设是[B, T]，取第一个批次
+                prompt_speech_16k = prompt_speech_16k[0, :]
+            
+            # 添加零样本说话人
+            result = model.add_zero_shot_spk(prompt_text, prompt_speech_16k, zero_shot_spk_id)
+            
+            if not result:
+                raise RuntimeError("Failed to add zero-shot speaker")
+            
+            # 保存说话人信息
+            model.save_spkinfo()
+            
+            return (model,)
+        except Exception as e:
+            raise RuntimeError(f"Failed to save speaker info: {str(e)}")
+
+# 节点映射
+NODE_CLASS_MAPPINGS = {
+    "CosyVoice2Loader": CosyVoice2Loader,
+    "CosyVoice2ModelChecker": CosyVoice2ModelChecker,
+    "CosyVoice2ModelDownloader": CosyVoice2ModelDownloader,
+    "LoadAudio": LoadAudio,
+    "SaveAudio": SaveAudio,
+    "CosyVoice2ZeroShot": CosyVoice2ZeroShot,
+    "CosyVoice2Instruct": CosyVoice2Instruct,
+    "CosyVoice2CrossLingual": CosyVoice2CrossLingual,
+    "CosyVoice2SaveSpeaker": CosyVoice2SaveSpeaker,
+}
+
+# 节点显示名称映射
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "CosyVoice2Loader": "Load CosyVoice2 Model",
+    "CosyVoice2ModelChecker": "Check CosyVoice2 Model",
+    "CosyVoice2ModelDownloader": "Download CosyVoice2 Model",
+    "LoadAudio": "Load Audio",
+    "SaveAudio": "Save Audio",
+    "CosyVoice2ZeroShot": "CosyVoice2 Zero Shot",
+    "CosyVoice2Instruct": "CosyVoice2 Instruct",
+    "CosyVoice2CrossLingual": "CosyVoice2 Cross Lingual",
+    "CosyVoice2SaveSpeaker": "CosyVoice2 Save Speaker",
+}
