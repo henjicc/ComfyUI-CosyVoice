@@ -4,7 +4,7 @@ import time
 import torch
 import torchaudio
 import numpy as np
-from typing import Dict, Any, Union, Generator
+from typing import Dict, Any, Literal, Union, Generator
 
 # 添加当前目录到Python路径中，以便导入cosyvoice模块
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -234,118 +234,6 @@ class CosyVoice2Loader:
         except Exception as e:
             raise RuntimeError(f"Failed to load CosyVoice2 model: {str(e)}")
 
-class LoadAudio:
-    """加载音频文件或处理音频数据"""
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "audio_path": ("STRING", {"default": "./asset/zero_shot_prompt.wav"}),
-            },
-            "optional": {
-                "audio_data": ("AUDIO",),
-                "target_sample_rate": ("INT", {"default": 16000, "min": 8000, "max": 48000}),
-            }
-        }
-    
-    RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("audio",)
-    FUNCTION = "load_audio"
-    CATEGORY = "CosyVoice2/Audio"
-    
-    def load_audio(self, audio_path: str = "", audio_data: Dict[str, Any] = None, target_sample_rate: int = 16000):
-        try:
-            # 如果提供了音频数据，直接使用它
-            if audio_data is not None:
-                waveform = audio_data["waveform"]
-                sample_rate = audio_data["sample_rate"]
-                
-                # 如果需要重采样
-                if sample_rate != target_sample_rate:
-                    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=target_sample_rate)
-                    waveform = resampler(waveform)
-                    sample_rate = target_sample_rate
-                
-                # 确保音频形状为[B, C, T]格式
-                if waveform.dim() == 1:
-                    # 单声道音频，形状为[T] -> [1, 1, T]
-                    waveform = waveform.unsqueeze(0).unsqueeze(0)
-                elif waveform.dim() == 2:
-                    # 可能是[B, T]或[C, T]，假设是[B, T] -> [B, 1, T]
-                    waveform = waveform.unsqueeze(1)
-                
-                # 转换为ComfyUI的AUDIO格式
-                audio_dict = {
-                    "waveform": waveform,
-                    "sample_rate": sample_rate
-                }
-                
-                return (audio_dict,)
-            
-            # 如果没有提供音频数据，尝试从文件路径加载
-            if audio_path and os.path.exists(audio_path):
-                # 使用CosyVoice的load_wav函数加载音频
-                speech = load_wav(audio_path, target_sample_rate)
-                
-                # 确保音频形状为[B, C, T]格式
-                if speech.dim() == 1:
-                    # 单声道音频，形状为[T] -> [1, 1, T]
-                    speech = speech.unsqueeze(0).unsqueeze(0)
-                elif speech.dim() == 2:
-                    # 可能是[B, T]或[C, T]，假设是[B, T] -> [B, 1, T]
-                    speech = speech.unsqueeze(1)
-                
-                # 转换为ComfyUI的AUDIO格式
-                audio_dict = {
-                    "waveform": speech,
-                    "sample_rate": target_sample_rate
-                }
-                
-                return (audio_dict,)
-            else:
-                # 如果既没有音频数据也没有有效的音频路径，返回错误
-                if not audio_path:
-                    raise ValueError("Either audio_data or audio_path must be provided")
-                else:
-                    raise FileNotFoundError(f"Audio file not found: {audio_path}")
-                
-        except Exception as e:
-            raise RuntimeError(f"Failed to load audio: {str(e)}")
-
-class SaveAudio:
-    """保存音频文件"""
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "audio": ("AUDIO",),
-                "save_path": ("STRING", {"default": "./output.wav"}),
-            }
-        }
-    
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("path",)
-    FUNCTION = "save_audio"
-    CATEGORY = "CosyVoice2/Audio"
-    OUTPUT_NODE = True
-    
-    def save_audio(self, audio: Dict[str, Any], save_path: str):
-        try:
-            waveform = audio["waveform"]
-            sample_rate = audio["sample_rate"]
-            
-            # 确保目录存在
-            os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
-            
-            # 保存音频
-            torchaudio.save(save_path, waveform, sample_rate)
-            
-            return (save_path,)
-        except Exception as e:
-            raise RuntimeError(f"Failed to save audio: {str(e)}")
-
 class CosyVoice2ZeroShot:
     """CosyVoice2零样本语音合成"""
     
@@ -361,23 +249,25 @@ class CosyVoice2ZeroShot:
                 "tts_text": ("STRING", {"default": "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。", "multiline": True}),
             },
             "optional": {
-                "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
+                "prompt_text": ("STRING", {"default": ""}),
                 "prompt_audio": ("AUDIO",),
                 "speaker_file": (speaker_options, {"default": ""}),
-                "stream": ("BOOLEAN", {"default": False}),
+                # "stream": ("BOOLEAN", {"default": False}),  # 隐藏流式输出选项
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
     
     RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("audio",)
+    RETURN_NAMES = ("AUDIO",)
     FUNCTION = "zero_shot"
     CATEGORY = "CosyVoice2/Inference"
     
     def zero_shot(self, model: CosyVoice2, tts_text: str, prompt_text: str = "", 
                  prompt_audio: Dict[str, Any] = None, speaker_file: str = "",
-                 stream: bool = False, speed: float = 1.0, text_frontend: bool = True):
+                 # stream: bool = False,  # 隐藏流式输出选项
+                 speed: float = 1.0, text_frontend: bool = True, seed: int = 0):
         try:
             # 初始化变量
             prompt_speech_16k = None
@@ -420,16 +310,31 @@ class CosyVoice2ZeroShot:
                 # 如果使用了音频，则不使用预保存的说话人ID
                 zero_shot_spk_id = ""
             
-            # 执行零样本推理
-            audio_generator = model.inference_zero_shot(
-                tts_text=tts_text,
-                prompt_text=prompt_text,
-                prompt_speech_16k=prompt_speech_16k,  # 当zero_shot_spk_id不为空时，CosyVoice会忽略这个参数
-                zero_shot_spk_id=zero_shot_spk_id,
-                stream=stream,
-                speed=speed,
-                text_frontend=text_frontend
-            )
+            # 如果使用了保存的说话人且没有提供音频，需要特殊处理
+            if zero_shot_spk_id and prompt_audio is None:
+                # 使用保存的说话人信息进行推理，不传递prompt_speech_16k参数
+                audio_generator = model.inference_zero_shot(
+                    tts_text=tts_text,
+                    prompt_text=prompt_text,
+                    prompt_speech_16k=None,  # 使用保存的说话人时不传递音频
+                    zero_shot_spk_id=zero_shot_spk_id,
+                    # stream=stream,  # 隐藏流式输出选项
+                    speed=speed,
+                    text_frontend=text_frontend,
+                    seed=seed
+                )
+            else:
+                # 执行零样本推理
+                audio_generator = model.inference_zero_shot(
+                    tts_text=tts_text,
+                    prompt_text=prompt_text,
+                    prompt_speech_16k=prompt_speech_16k,  # 当zero_shot_spk_id不为空时，CosyVoice会忽略这个参数
+                    zero_shot_spk_id=zero_shot_spk_id,
+                    # stream=stream,  # 隐藏流式输出选项
+                    speed=speed,
+                    text_frontend=text_frontend,
+                    seed=seed
+                )
             
             # 收集所有音频片段
             audio_chunks = []
@@ -476,20 +381,22 @@ class CosyVoice2Instruct:
             "optional": {
                 "prompt_audio": ("AUDIO",),
                 "speaker_file": (speaker_options, {"default": ""}),
-                "stream": ("BOOLEAN", {"default": False}),
+                # "stream": ("BOOLEAN", {"default": False}),  # 隐藏流式输出选项
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
     
     RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("audio",)
+    RETURN_NAMES = ("AUDIO",)
     FUNCTION = "instruct"
     CATEGORY = "CosyVoice2/Inference"
     
     def instruct(self, model: CosyVoice2, tts_text: str, instruct_text: str, 
                 prompt_audio: Dict[str, Any] = None, speaker_file: str = "",
-                stream: bool = False, speed: float = 1.0, text_frontend: bool = True):
+                # stream: bool = False,  # 隐藏流式输出选项
+                speed: float = 1.0, text_frontend: bool = True, seed: int = 0):
         try:
             # 初始化变量
             prompt_speech_16k = None
@@ -554,9 +461,10 @@ class CosyVoice2Instruct:
                             instruct_text=instruct_text,
                             prompt_speech_16k=None,
                             zero_shot_spk_id=zero_shot_spk_id,
-                            stream=stream,
+                            # stream=stream,  # 隐藏流式输出选项
                             speed=speed,
-                            text_frontend=text_frontend
+                            text_frontend=text_frontend,
+                            seed=seed
                         )
                         
                         # 收集所有音频片段
@@ -583,9 +491,10 @@ class CosyVoice2Instruct:
                     instruct_text=instruct_text,
                     prompt_speech_16k=prompt_speech_16k,
                     zero_shot_spk_id=zero_shot_spk_id,
-                    stream=stream,
+                    # stream=stream,  # 隐藏流式输出选项
                     speed=speed,
-                    text_frontend=text_frontend
+                    text_frontend=text_frontend,
+                    seed=seed
                 )
                 
                 # 收集所有音频片段
@@ -632,21 +541,23 @@ class CosyVoice2CrossLingual:
             "optional": {
                 "prompt_audio": ("AUDIO",),
                 "speaker_file": (speaker_options, {"default": ""}),
-                "stream": ("BOOLEAN", {"default": False}),
+                # "stream": ("BOOLEAN", {"default": False}),  # 隐藏流式输出选项
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
     
     RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("audio",)
+    RETURN_NAMES = ("AUDIO",)
     FUNCTION = "cross_lingual"
     CATEGORY = "CosyVoice2/Inference"
     
     def cross_lingual(self, model: CosyVoice2, tts_text: str, 
                      prompt_audio: Dict[str, Any] = None, speaker_file: str = "",
-                     stream: bool = False, speed: float = 1.0, 
-                     text_frontend: bool = True):
+                     # stream: bool = False,  # 隐藏流式输出选项
+                     speed: float = 1.0, 
+                     text_frontend: bool = True, seed: int = 0):
         try:
             # 初始化变量
             prompt_speech_16k = None
@@ -689,15 +600,29 @@ class CosyVoice2CrossLingual:
                 # 如果使用了音频，则不使用预保存的说话人ID
                 zero_shot_spk_id = ""
             
-            # 执行跨语言推理
-            audio_generator = model.inference_cross_lingual(
-                tts_text=tts_text,
-                prompt_speech_16k=prompt_speech_16k,  # 当zero_shot_spk_id不为空时，CosyVoice会忽略这个参数
-                zero_shot_spk_id=zero_shot_spk_id,
-                stream=stream,
-                speed=speed,
-                text_frontend=text_frontend
-            )
+            # 如果使用了保存的说话人且没有提供音频，需要特殊处理
+            if zero_shot_spk_id and prompt_audio is None:
+                # 使用保存的说话人信息进行推理，不传递prompt_speech_16k参数
+                audio_generator = model.inference_cross_lingual(
+                    tts_text=tts_text,
+                    prompt_speech_16k=None,  # 使用保存的说话人时不传递音频
+                    zero_shot_spk_id=zero_shot_spk_id,
+                    # stream=stream,  # 隐藏流式输出选项
+                    speed=speed,
+                    text_frontend=text_frontend,
+                    seed=seed
+                )
+            else:
+                # 执行跨语言推理
+                audio_generator = model.inference_cross_lingual(
+                    tts_text=tts_text,
+                    prompt_speech_16k=prompt_speech_16k,  # 当zero_shot_spk_id不为空时，CosyVoice会忽略这个参数
+                    zero_shot_spk_id=zero_shot_spk_id,
+                    # stream=stream,  # 隐藏流式输出选项
+                    speed=speed,
+                    text_frontend=text_frontend,
+                    seed=seed
+                )
             
             # 收集所有音频片段
             audio_chunks = []
@@ -869,9 +794,9 @@ class CosyVoice2SaveSpeaker:
         return {
             "required": {
                 "model": ("COSYVOICE2_MODEL",),
-                "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
+                "prompt_text": ("STRING", {"default": ""}),
                 "prompt_audio": ("AUDIO",),
-                "zero_shot_spk_id": ("STRING", {"default": "my_zero_shot_spk"}),
+                "zero_shot_spk_id": ("STRING", {"default": ""}),
             },
             "hidden": {
                 "prompt": "PROMPT",
@@ -946,8 +871,6 @@ NODE_CLASS_MAPPINGS = {
     "CosyVoice2Loader": CosyVoice2Loader,
     "CosyVoice2ModelChecker": CosyVoice2ModelChecker,
     "CosyVoice2ModelDownloader": CosyVoice2ModelDownloader,
-    "LoadAudio": LoadAudio,
-    "SaveAudio": SaveAudio,
     "CosyVoice2ZeroShot": CosyVoice2ZeroShot,
     "CosyVoice2Instruct": CosyVoice2Instruct,
     "CosyVoice2CrossLingual": CosyVoice2CrossLingual,
@@ -959,8 +882,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CosyVoice2Loader": "Load CosyVoice2 Model",
     "CosyVoice2ModelChecker": "Check CosyVoice2 Model",
     "CosyVoice2ModelDownloader": "Download CosyVoice2 Model",
-    "LoadAudio": "Load Audio",
-    "SaveAudio": "Save Audio",
     "CosyVoice2ZeroShot": "CosyVoice2 Zero Shot",
     "CosyVoice2Instruct": "CosyVoice2 Instruct",
     "CosyVoice2CrossLingual": "CosyVoice2 Cross Lingual",

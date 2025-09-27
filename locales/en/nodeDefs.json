@@ -83,6 +83,10 @@
       "text_frontend": {
         "name": "Text Normalization",
         "tooltip": "Standardize input text processing, including number conversion, punctuation handling, etc."
+      },
+      "seed": {
+        "name": "Random Seed",
+        "tooltip": "Random seed, different seeds produce different results, same seed and parameters produce the same result"
       }
     },
     "outputs": {
@@ -131,6 +135,10 @@
       "text_frontend": {
         "name": "Text Normalization",
         "tooltip": "Standardize input text processing, including number conversion, punctuation handling, etc."
+      },
+      "seed": {
+        "name": "Random Seed",
+        "tooltip": "Random seed, different seeds produce different results, same seed and parameters produce the same result"
       }
     },
     "outputs": {
@@ -175,56 +183,16 @@
       "text_frontend": {
         "name": "Text Normalization",
         "tooltip": "Standardize input text processing, including number conversion, punctuation handling, etc."
+      },
+      "seed": {
+        "name": "Random Seed",
+        "tooltip": "Random seed, different seeds produce different results, same seed and parameters produce the same result"
       }
     },
     "outputs": {
       "audio": {
         "name": "Synthesized Audio",
         "tooltip": "Generated audio in different language with cloned voice"
-      }
-    }
-  },
-  "LoadAudio": {
-    "display_name": "Load Audio",
-    "description": "Load audio file for voice cloning",
-    "inputs": {
-      "audio_path": {
-        "name": "Audio Path",
-        "tooltip": "Path to the audio file to load"
-      },
-      "audio_data": {
-        "name": "Audio Data",
-        "tooltip": "Existing audio data to process"
-      },
-      "target_sample_rate": {
-        "name": "Target Sample Rate",
-        "tooltip": "Desired sample rate for the output audio (8000-48000 Hz)"
-      }
-    },
-    "outputs": {
-      "audio": {
-        "name": "Audio Data",
-        "tooltip": "Loaded audio data suitable for CosyVoice2"
-      }
-    }
-  },
-  "SaveAudio": {
-    "display_name": "Save Audio",
-    "description": "Save synthesized audio to file",
-    "inputs": {
-      "audio": {
-        "name": "Audio Data",
-        "tooltip": "Audio data to save"
-      },
-      "save_path": {
-        "name": "Save Path",
-        "tooltip": "Path where the audio file will be saved"
-      }
-    },
-    "outputs": {
-      "text": {
-        "name": "File Path",
-        "tooltip": "Path to the saved audio file"
       }
     }
   },

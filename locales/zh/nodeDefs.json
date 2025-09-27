@@ -83,6 +83,10 @@
       "text_frontend": {
         "name": "文本规范化",
         "tooltip": "对输入文本进行标准化处理，包括数字转换、标点符号处理等"
+      },
+      "seed": {
+        "name": "随机种子",
+        "tooltip": "随机种子，不同的种子会产生不同的结果，相同的种子和参数会产生相同的结果"
       }
     },
     "outputs": {
@@ -131,6 +135,10 @@
       "text_frontend": {
         "name": "文本规范化",
         "tooltip": "对输入文本进行标准化处理，包括数字转换、标点符号处理等"
+      },
+      "seed": {
+        "name": "随机种子",
+        "tooltip": "随机种子，不同的种子会产生不同的结果，相同的种子和参数会产生相同的结果"
       }
     },
     "outputs": {
@@ -175,56 +183,16 @@
       "text_frontend": {
         "name": "文本规范化",
         "tooltip": "对输入文本进行标准化处理，包括数字转换、标点符号处理等"
+      },
+      "seed": {
+        "name": "随机种子",
+        "tooltip": "随机种子，不同的种子会产生不同的结果，相同的种子和参数会产生相同的结果"
       }
     },
     "outputs": {
       "audio": {
         "name": "合成音频",
         "tooltip": "使用克隆声音生成的不同语言的音频"
-      }
-    }
-  },
-  "LoadAudio": {
-    "display_name": "加载音频",
-    "description": "加载用于声音克隆的音频文件",
-    "inputs": {
-      "audio_path": {
-        "name": "音频路径",
-        "tooltip": "要加载的音频文件路径"
-      },
-      "audio_data": {
-        "name": "音频数据",
-        "tooltip": "要处理的现有音频数据"
-      },
-      "target_sample_rate": {
-        "name": "目标采样率",
-        "tooltip": "输出音频的期望采样率（8000-48000 Hz）"
-      }
-    },
-    "outputs": {
-      "audio": {
-        "name": "音频数据",
-        "tooltip": "适用于 CosyVoice2 的加载音频数据"
-      }
-    }
-  },
-  "SaveAudio": {
-    "display_name": "保存音频",
-    "description": "将合成的音频保存到文件",
-    "inputs": {
-      "audio": {
-        "name": "音频数据",
-        "tooltip": "要保存的音频数据"
-      },
-      "save_path": {
-        "name": "保存路径",
-        "tooltip": "音频文件将被保存的路径"
-      }
-    },
-    "outputs": {
-      "text": {
-        "name": "文件路径",
-        "tooltip": "已保存音频文件的路径"
       }
     }
   },
