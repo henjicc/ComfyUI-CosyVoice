@@ -66,7 +66,7 @@
       },
       "speaker_file": {
         "name": "说话人文件",
-        "tooltip": "保存的说话人信息文件"
+        "tooltip": "保存的说话人信息文件，选择\"无\"表示不使用保存的说话人"
       },
       "zero_shot_spk_id": {
         "name": "说话人ID",
@@ -118,7 +118,7 @@
       },
       "speaker_file": {
         "name": "说话人文件",
-        "tooltip": "保存的说话人信息文件"
+        "tooltip": "保存的说话人信息文件，选择\"无\"表示不使用保存的说话人"
       },
       "zero_shot_spk_id": {
         "name": "说话人ID",
@@ -166,7 +166,7 @@
       },
       "speaker_file": {
         "name": "说话人文件",
-        "tooltip": "保存的说话人信息文件"
+        "tooltip": "保存的说话人信息文件，选择\"无\"表示不使用保存的说话人"
       },
       "zero_shot_spk_id": {
         "name": "说话人ID",

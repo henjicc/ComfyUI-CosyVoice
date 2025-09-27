@@ -66,7 +66,7 @@
       },
       "speaker_file": {
         "name": "Speaker File",
-        "tooltip": "Saved speaker information file"
+        "tooltip": "Saved speaker information file, select \"None\" to not use saved speaker"
       },
       "zero_shot_spk_id": {
         "name": "Speaker ID",
@@ -118,7 +118,7 @@
       },
       "speaker_file": {
         "name": "Speaker File",
-        "tooltip": "Saved speaker information file"
+        "tooltip": "Saved speaker information file, select \"None\" to not use saved speaker"
       },
       "zero_shot_spk_id": {
         "name": "Speaker ID",
@@ -166,7 +166,7 @@
       },
       "speaker_file": {
         "name": "Speaker File",
-        "tooltip": "Saved speaker information file"
+        "tooltip": "Saved speaker information file, select \"None\" to not use saved speaker"
       },
       "zero_shot_spk_id": {
         "name": "Speaker ID",

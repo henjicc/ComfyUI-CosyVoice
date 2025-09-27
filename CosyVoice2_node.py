@@ -241,7 +241,8 @@ class CosyVoice2ZeroShot:
     def INPUT_TYPES(cls):
         # 获取说话人文件列表
         speaker_files = get_speaker_files()
-        speaker_options = [""] + speaker_files if speaker_files else [""]
+        # 添加"无"选项作为默认选项
+        speaker_options = ["无"] + speaker_files if speaker_files else ["无"]
         
         return {
             "required": {
@@ -251,7 +252,7 @@ class CosyVoice2ZeroShot:
             "optional": {
                 "prompt_text": ("STRING", {"default": ""}),
                 "prompt_audio": ("AUDIO",),
-                "speaker_file": (speaker_options, {"default": ""}),
+                "speaker_file": (speaker_options, {"default": "无"}),
                 # "stream": ("BOOLEAN", {"default": False}),  # 隐藏流式输出选项
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
@@ -273,14 +274,17 @@ class CosyVoice2ZeroShot:
             prompt_speech_16k = None
             zero_shot_spk_id = ""
             
+            # 处理说话人文件选项，将"无"转换为空字符串
+            actual_speaker_file = "" if speaker_file == "无" else speaker_file
+            
             # 如果提供了说话人文件，则加载说话人信息
-            if speaker_file and speaker_file != "":
+            if actual_speaker_file and actual_speaker_file != "":
                 # 获取说话人ID（去掉.pt扩展名）
-                zero_shot_spk_id = os.path.splitext(speaker_file)[0]
+                zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
                 # 确保说话人信息已加载到模型中
                 speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
-                speaker_file_path = os.path.join(speakers_dir, speaker_file)
+                speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
                     # 加载说话人信息
@@ -370,7 +374,8 @@ class CosyVoice2Instruct:
     def INPUT_TYPES(cls):
         # 获取说话人文件列表
         speaker_files = get_speaker_files()
-        speaker_options = [""] + speaker_files if speaker_files else [""]
+        # 添加"无"选项作为默认选项
+        speaker_options = ["无"] + speaker_files if speaker_files else ["无"]
         
         return {
             "required": {
@@ -380,7 +385,7 @@ class CosyVoice2Instruct:
             },
             "optional": {
                 "prompt_audio": ("AUDIO",),
-                "speaker_file": (speaker_options, {"default": ""}),
+                "speaker_file": (speaker_options, {"default": "无"}),
                 # "stream": ("BOOLEAN", {"default": False}),  # 隐藏流式输出选项
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
@@ -402,14 +407,17 @@ class CosyVoice2Instruct:
             prompt_speech_16k = None
             zero_shot_spk_id = ""
             
+            # 处理说话人文件选项，将"无"转换为空字符串
+            actual_speaker_file = "" if speaker_file == "无" else speaker_file
+            
             # 如果提供了说话人文件，则加载说话人信息
-            if speaker_file and speaker_file != "":
+            if actual_speaker_file and actual_speaker_file != "":
                 # 获取说话人ID（去掉.pt扩展名）
-                zero_shot_spk_id = os.path.splitext(speaker_file)[0]
+                zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
                 # 确保说话人信息已加载到模型中
                 speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
-                speaker_file_path = os.path.join(speakers_dir, speaker_file)
+                speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
                     # 加载说话人信息
@@ -531,7 +539,8 @@ class CosyVoice2CrossLingual:
     def INPUT_TYPES(cls):
         # 获取说话人文件列表
         speaker_files = get_speaker_files()
-        speaker_options = [""] + speaker_files if speaker_files else [""]
+        # 添加"无"选项作为默认选项
+        speaker_options = ["无"] + speaker_files if speaker_files else ["无"]
         
         return {
             "required": {
@@ -540,7 +549,7 @@ class CosyVoice2CrossLingual:
             },
             "optional": {
                 "prompt_audio": ("AUDIO",),
-                "speaker_file": (speaker_options, {"default": ""}),
+                "speaker_file": (speaker_options, {"default": "无"}),
                 # "stream": ("BOOLEAN", {"default": False}),  # 隐藏流式输出选项
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
@@ -563,14 +572,17 @@ class CosyVoice2CrossLingual:
             prompt_speech_16k = None
             zero_shot_spk_id = ""
             
+            # 处理说话人文件选项，将"无"转换为空字符串
+            actual_speaker_file = "" if speaker_file == "无" else speaker_file
+            
             # 如果提供了说话人文件，则加载说话人信息
-            if speaker_file and speaker_file != "":
+            if actual_speaker_file and actual_speaker_file != "":
                 # 获取说话人ID（去掉.pt扩展名）
-                zero_shot_spk_id = os.path.splitext(speaker_file)[0]
+                zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
                 # 确保说话人信息已加载到模型中
                 speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
-                speaker_file_path = os.path.join(speakers_dir, speaker_file)
+                speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
                     # 加载说话人信息
