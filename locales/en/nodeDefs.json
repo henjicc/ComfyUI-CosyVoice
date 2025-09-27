@@ -276,8 +276,8 @@
     }
   },
   "CosyVoice2SaveSpeaker": {
-    "display_name": "CosyVoice2 Save Speaker",
-    "description": "Save speaker information for zero-shot voice cloning",
+    "display_name": "CosyVoice2 Save Speaker to File",
+    "description": "Save speaker information for zero-shot voice cloning to file",
     "inputs": {
       "model": {
         "name": "Model",
@@ -297,9 +297,9 @@
       }
     },
     "outputs": {
-      "zero_shot_spk_id": {
-        "name": "Speaker ID",
-        "tooltip": "Saved speaker identifier"
+      "speaker_file": {
+        "name": "Speaker File",
+        "tooltip": "Path to the saved speaker file"
       }
     }
   }

@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import torch
 import torchaudio
 import numpy as np
@@ -871,16 +872,22 @@ class CosyVoice2SaveSpeaker:
                 "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
                 "prompt_audio": ("AUDIO",),
                 "zero_shot_spk_id": ("STRING", {"default": "my_zero_shot_spk"}),
+            },
+            "hidden": {
+                "prompt": "PROMPT",
+                "extra_pnginfo": "EXTRA_PNGINFO",
             }
         }
     
-    RETURN_TYPES = ("COSYVOICE2_MODEL",)
-    RETURN_NAMES = ("model",)
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("speaker_file",)
     FUNCTION = "save_speaker"
     CATEGORY = "CosyVoice2/Utils"
+    OUTPUT_NODE = True
+    WEB_DIRECTORY = "./web"
     
     def save_speaker(self, model: CosyVoice2, prompt_text: str, prompt_audio: Dict[str, Any], 
-                    zero_shot_spk_id: str):
+                    zero_shot_spk_id: str, prompt=None, extra_pnginfo=None):
         try:
             # 获取音频和采样率
             prompt_speech_16k = prompt_audio["waveform"]
@@ -903,8 +910,9 @@ class CosyVoice2SaveSpeaker:
             result = model.add_zero_shot_spk(prompt_text, prompt_speech_16k, zero_shot_spk_id)
             
             if not result:
-                raise RuntimeError("Failed to add zero-shot speaker")
-            
+                # 准备错误显示信息（使用中文）
+                error_info = f"说话人保存失败！\n\n错误信息: Failed to add zero-shot speaker\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                return {"ui": {"text": [error_info]}, "result": ("",)}
             # 创建speakers目录（如果不存在）
             speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
             os.makedirs(speakers_dir, exist_ok=True)
@@ -914,9 +922,15 @@ class CosyVoice2SaveSpeaker:
             torch.save(model.frontend.spk2info[zero_shot_spk_id], speaker_file_path)
             print(f"Speaker info saved to {speaker_file_path}")
             
-            return (model,)
+            # 准备显示信息（使用中文）
+            save_info = f"说话人保存成功！\n\n说话人ID: {zero_shot_spk_id}\n文件路径: {speaker_file_path}\n保存时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+            
+            # 返回保存的文件路径和UI信息
+            return {"ui": {"text": [save_info]}, "result": (speaker_file_path,)}
         except Exception as e:
-            raise RuntimeError(f"Failed to save speaker info: {str(e)}")
+            # 准备错误显示信息（使用中文）
+            error_info = f"说话人保存失败！\n\n错误信息: {str(e)}\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+            return {"ui": {"text": [error_info]}, "result": ("",)}
 
 class CosyVoice2LoadSpeaker:
     """加载零样本说话人信息"""
@@ -1001,6 +1015,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CosyVoice2ZeroShot": "CosyVoice2 Zero Shot",
     "CosyVoice2Instruct": "CosyVoice2 Instruct",
     "CosyVoice2CrossLingual": "CosyVoice2 Cross Lingual",
-    "CosyVoice2SaveSpeaker": "CosyVoice2 Save Speaker",
+    "CosyVoice2SaveSpeaker": "Save Speaker to File",
     "CosyVoice2LoadSpeaker": "CosyVoice2 Load Speaker",
 }

@@ -276,8 +276,8 @@
     }
   },
   "CosyVoice2SaveSpeaker": {
-    "display_name": "CosyVoice2 保存说话人",
-    "description": "保存零样本声音克隆的说话人信息",
+    "display_name": "CosyVoice2 保存说话人到文件",
+    "description": "将零样本声音克隆的说话人信息保存到文件",
     "inputs": {
       "model": {
         "name": "模型",
@@ -297,9 +297,9 @@
       }
     },
     "outputs": {
-      "zero_shot_spk_id": {
-        "name": "说话人ID",
-        "tooltip": "已保存的说话人标识符"
+      "speaker_file": {
+        "name": "说话人文件",
+        "tooltip": "已保存的说话人文件路径"
       }
     }
   }
