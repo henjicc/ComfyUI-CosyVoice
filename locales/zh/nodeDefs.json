@@ -1,0 +1,294 @@
+{
+  "CosyVoice2Loader": {
+    "display_name": "CosyVoice2 模型加载器",
+    "description": "加载 CosyVoice2 文本转语音模型",
+    "inputs": {
+      "model_dir": {
+        "name": "模型目录",
+        "tooltip": "CosyVoice2 模型所在的目录路径"
+      },
+      "load_jit": {
+        "name": "加载 JIT 模型",
+        "tooltip": "是否加载 JIT 编译模型以获得更快的推理速度"
+      },
+      "load_trt": {
+        "name": "加载 TRT 模型",
+        "tooltip": "是否加载 TensorRT 优化模型以获得更快的推理速度"
+      },
+      "load_vllm": {
+        "name": "加载 VLLM 模型",
+        "tooltip": "是否加载带有 VLLM 加速的模型"
+      },
+      "fp16": {
+        "name": "FP16 精度",
+        "tooltip": "是否使用 FP16 精度以获得更快的推理速度"
+      },
+      "device": {
+        "name": "设备",
+        "tooltip": "运行模型的设备",
+        "options": {
+          "auto": "自动",
+          "cpu": "CPU",
+          "cuda": "CUDA"
+        }
+      },
+      "auto_download": {
+        "name": "自动下载",
+        "tooltip": "如果模型不存在则自动下载"
+      }
+    },
+    "outputs": {
+      "model": {
+        "name": "CosyVoice2 模型",
+        "tooltip": "已加载的 CosyVoice2 模型实例"
+      }
+    }
+  },
+  "CosyVoice2ZeroShot": {
+    "display_name": "CosyVoice2 零样本克隆",
+    "description": "使用 CosyVoice2 进行零样本声音克隆",
+    "inputs": {
+      "model": {
+        "name": "模型",
+        "tooltip": "已加载的 CosyVoice2 模型"
+      },
+      "tts_text": {
+        "name": "待合成文本",
+        "tooltip": "要合成的文本内容"
+      },
+      "prompt_text": {
+        "name": "提示文本",
+        "tooltip": "与提示音频匹配的文本内容"
+      },
+      "prompt_audio": {
+        "name": "提示音频",
+        "tooltip": "用于声音克隆的参考音频"
+      },
+      "zero_shot_spk_id": {
+        "name": "说话人ID",
+        "tooltip": "克隆说话人的标识符"
+      },
+      "stream": {
+        "name": "流式模式",
+        "tooltip": "启用流式合用以降低延迟"
+      },
+      "speed": {
+        "name": "语速",
+        "tooltip": "调整语速（0.5-2.0），1.0 为正常速度"
+      },
+      "text_frontend": {
+        "name": "文本前端",
+        "tooltip": "启用文本处理前端"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "合成音频",
+        "tooltip": "使用克隆声音生成的音频"
+      }
+    }
+  },
+  "CosyVoice2Instruct": {
+    "display_name": "CosyVoice2 指令合成",
+    "description": "基于指令的文本转语音合成",
+    "inputs": {
+      "model": {
+        "name": "模型",
+        "tooltip": "已加载的 CosyVoice2 模型"
+      },
+      "tts_text": {
+        "name": "待合成文本",
+        "tooltip": "要合成的文本内容"
+      },
+      "instruct_text": {
+        "name": "指令文本",
+        "tooltip": "控制说话风格、方言或情感的指令"
+      },
+      "prompt_audio": {
+        "name": "提示音频",
+        "tooltip": "可选的声音克隆参考音频"
+      },
+      "zero_shot_spk_id": {
+        "name": "说话人ID",
+        "tooltip": "克隆说话人的标识符"
+      },
+      "stream": {
+        "name": "流式模式",
+        "tooltip": "启用流式合用以降低延迟"
+      },
+      "speed": {
+        "name": "语速",
+        "tooltip": "调整语速（0.5-2.0），1.0 为正常速度"
+      },
+      "text_frontend": {
+        "name": "文本前端",
+        "tooltip": "启用文本处理前端"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "合成音频",
+        "tooltip": "按照指令风格生成的音频"
+      }
+    }
+  },
+  "CosyVoice2CrossLingual": {
+    "display_name": "CosyVoice2 跨语言合成",
+    "description": "跨语言文本转语音合成",
+    "inputs": {
+      "model": {
+        "name": "模型",
+        "tooltip": "已加载的 CosyVoice2 模型"
+      },
+      "tts_text": {
+        "name": "待合成文本",
+        "tooltip": "要合成的文本内容（支持多种语言）"
+      },
+      "prompt_audio": {
+        "name": "提示音频",
+        "tooltip": "用于跨语言声音克隆的参考音频"
+      },
+      "zero_shot_spk_id": {
+        "name": "说话人ID",
+        "tooltip": "克隆说话人的标识符"
+      },
+      "stream": {
+        "name": "流式模式",
+        "tooltip": "启用流式合用以降低延迟"
+      },
+      "speed": {
+        "name": "语速",
+        "tooltip": "调整语速（0.5-2.0），1.0 为正常速度"
+      },
+      "text_frontend": {
+        "name": "文本前端",
+        "tooltip": "启用文本处理前端"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "合成音频",
+        "tooltip": "使用克隆声音生成的不同语言的音频"
+      }
+    }
+  },
+  "LoadAudio": {
+    "display_name": "加载音频",
+    "description": "加载用于声音克隆的音频文件",
+    "inputs": {
+      "audio_path": {
+        "name": "音频路径",
+        "tooltip": "要加载的音频文件路径"
+      },
+      "audio_data": {
+        "name": "音频数据",
+        "tooltip": "要处理的现有音频数据"
+      },
+      "target_sample_rate": {
+        "name": "目标采样率",
+        "tooltip": "输出音频的期望采样率（8000-48000 Hz）"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "音频数据",
+        "tooltip": "适用于 CosyVoice2 的加载音频数据"
+      }
+    }
+  },
+  "SaveAudio": {
+    "display_name": "保存音频",
+    "description": "将合成的音频保存到文件",
+    "inputs": {
+      "audio": {
+        "name": "音频数据",
+        "tooltip": "要保存的音频数据"
+      },
+      "save_path": {
+        "name": "保存路径",
+        "tooltip": "音频文件将被保存的路径"
+      }
+    },
+    "outputs": {
+      "text": {
+        "name": "文件路径",
+        "tooltip": "已保存音频文件的路径"
+      }
+    }
+  },
+  "CosyVoice2ModelChecker": {
+    "display_name": "CosyVoice2 模型检查器",
+    "description": "检查 CosyVoice2 模型是否已下载",
+    "inputs": {
+      "model_dir": {
+        "name": "模型目录",
+        "tooltip": "检查模型存在性的目录"
+      }
+    },
+    "outputs": {
+      "is_downloaded": {
+        "name": "是否已下载",
+        "tooltip": "指示模型是否已下载的布尔值"
+      }
+    }
+  },
+  "CosyVoice2ModelDownloader": {
+    "display_name": "CosyVoice2 模型下载器",
+    "description": "从 ModelScope 下载 CosyVoice2 模型",
+    "inputs": {
+      "model_type": {
+        "name": "模型类型",
+        "tooltip": "要下载的 CosyVoice2 模型类型",
+        "options": {
+          "CosyVoice2-0.5B": "CosyVoice2-0.5B",
+          "CosyVoice-300M": "CosyVoice-300M",
+          "CosyVoice-300M-SFT": "CosyVoice-300M-SFT",
+          "CosyVoice-300M-Instruct": "CosyVoice-300M-Instruct",
+          "CosyVoice-ttsfrd": "CosyVoice-ttsfrd"
+        }
+      },
+      "local_dir": {
+        "name": "本地目录",
+        "tooltip": "保存下载模型的本地目录"
+      },
+      "download_ttsfrd": {
+        "name": "下载 TTSFRD",
+        "tooltip": "同时下载用于文本处理的 TTSFRD 资源"
+      }
+    },
+    "outputs": {
+      "model_dir": {
+        "name": "模型目录",
+        "tooltip": "下载模型的目录路径"
+      }
+    }
+  },
+  "CosyVoice2SaveSpeaker": {
+    "display_name": "CosyVoice2 保存说话人",
+    "description": "保存零样本声音克隆的说话人信息",
+    "inputs": {
+      "model": {
+        "name": "模型",
+        "tooltip": "已加载的 CosyVoice2 模型"
+      },
+      "prompt_text": {
+        "name": "提示文本",
+        "tooltip": "与提示音频匹配的文本内容"
+      },
+      "prompt_audio": {
+        "name": "提示音频",
+        "tooltip": "说话人声音的参考音频"
+      },
+      "zero_shot_spk_id": {
+        "name": "说话人ID",
+        "tooltip": "保存的说话人的唯一标识符"
+      }
+    },
+    "outputs": {
+      "zero_shot_spk_id": {
+        "name": "说话人ID",
+        "tooltip": "已保存的说话人标识符"
+      }
+    }
+  }
+}

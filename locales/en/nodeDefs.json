@@ -1,0 +1,294 @@
+{
+  "CosyVoice2Loader": {
+    "display_name": "CosyVoice2 Model Loader",
+    "description": "Load CosyVoice2 text-to-speech model",
+    "inputs": {
+      "model_dir": {
+        "name": "Model Directory",
+        "tooltip": "Path to the CosyVoice2 model directory"
+      },
+      "load_jit": {
+        "name": "Load JIT Model",
+        "tooltip": "Whether to load the JIT compiled model for faster inference"
+      },
+      "load_trt": {
+        "name": "Load TRT Model",
+        "tooltip": "Whether to load the TensorRT optimized model for faster inference"
+      },
+      "load_vllm": {
+        "name": "Load VLLM Model",
+        "tooltip": "Whether to load the model with VLLM acceleration"
+      },
+      "fp16": {
+        "name": "FP16 Precision",
+        "tooltip": "Whether to use FP16 precision for faster inference"
+      },
+      "device": {
+        "name": "Device",
+        "tooltip": "Device to run the model on",
+        "options": {
+          "auto": "Auto",
+          "cpu": "CPU",
+          "cuda": "CUDA"
+        }
+      },
+      "auto_download": {
+        "name": "Auto Download",
+        "tooltip": "Automatically download the model if not found"
+      }
+    },
+    "outputs": {
+      "model": {
+        "name": "CosyVoice2 Model",
+        "tooltip": "Loaded CosyVoice2 model instance"
+      }
+    }
+  },
+  "CosyVoice2ZeroShot": {
+    "display_name": "CosyVoice2 Zero-Shot",
+    "description": "Zero-shot voice cloning with CosyVoice2",
+    "inputs": {
+      "model": {
+        "name": "Model",
+        "tooltip": "Loaded CosyVoice2 model"
+      },
+      "tts_text": {
+        "name": "Text to Speak",
+        "tooltip": "Text content to be synthesized"
+      },
+      "prompt_text": {
+        "name": "Prompt Text",
+        "tooltip": "Text that matches the prompt audio"
+      },
+      "prompt_audio": {
+        "name": "Prompt Audio",
+        "tooltip": "Reference audio for voice cloning"
+      },
+      "zero_shot_spk_id": {
+        "name": "Speaker ID",
+        "tooltip": "Identifier for the cloned speaker"
+      },
+      "stream": {
+        "name": "Streaming Mode",
+        "tooltip": "Enable streaming synthesis for lower latency"
+      },
+      "speed": {
+        "name": "Speech Speed",
+        "tooltip": "Adjust speech speed (0.5-2.0), 1.0 is normal speed"
+      },
+      "text_frontend": {
+        "name": "Text Frontend",
+        "tooltip": "Enable text processing frontend"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "Synthesized Audio",
+        "tooltip": "Generated audio with cloned voice"
+      }
+    }
+  },
+  "CosyVoice2Instruct": {
+    "display_name": "CosyVoice2 Instruct",
+    "description": "Instruction-based text-to-speech synthesis",
+    "inputs": {
+      "model": {
+        "name": "Model",
+        "tooltip": "Loaded CosyVoice2 model"
+      },
+      "tts_text": {
+        "name": "Text to Speak",
+        "tooltip": "Text content to be synthesized"
+      },
+      "instruct_text": {
+        "name": "Instruction Text",
+        "tooltip": "Instruction for controlling speaking style, dialect, or emotion"
+      },
+      "prompt_audio": {
+        "name": "Prompt Audio",
+        "tooltip": "Optional reference audio for voice cloning"
+      },
+      "zero_shot_spk_id": {
+        "name": "Speaker ID",
+        "tooltip": "Identifier for the cloned speaker"
+      },
+      "stream": {
+        "name": "Streaming Mode",
+        "tooltip": "Enable streaming synthesis for lower latency"
+      },
+      "speed": {
+        "name": "Speech Speed",
+        "tooltip": "Adjust speech speed (0.5-2.0), 1.0 is normal speed"
+      },
+      "text_frontend": {
+        "name": "Text Frontend",
+        "tooltip": "Enable text processing frontend"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "Synthesized Audio",
+        "tooltip": "Generated audio with instructed speaking style"
+      }
+    }
+  },
+  "CosyVoice2CrossLingual": {
+    "display_name": "CosyVoice2 Cross-Lingual",
+    "description": "Cross-lingual text-to-speech synthesis",
+    "inputs": {
+      "model": {
+        "name": "Model",
+        "tooltip": "Loaded CosyVoice2 model"
+      },
+      "tts_text": {
+        "name": "Text to Speak",
+        "tooltip": "Text content to be synthesized (supports multiple languages)"
+      },
+      "prompt_audio": {
+        "name": "Prompt Audio",
+        "tooltip": "Reference audio for voice cloning across languages"
+      },
+      "zero_shot_spk_id": {
+        "name": "Speaker ID",
+        "tooltip": "Identifier for the cloned speaker"
+      },
+      "stream": {
+        "name": "Streaming Mode",
+        "tooltip": "Enable streaming synthesis for lower latency"
+      },
+      "speed": {
+        "name": "Speech Speed",
+        "tooltip": "Adjust speech speed (0.5-2.0), 1.0 is normal speed"
+      },
+      "text_frontend": {
+        "name": "Text Frontend",
+        "tooltip": "Enable text processing frontend"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "Synthesized Audio",
+        "tooltip": "Generated audio in different language with cloned voice"
+      }
+    }
+  },
+  "LoadAudio": {
+    "display_name": "Load Audio",
+    "description": "Load audio file for voice cloning",
+    "inputs": {
+      "audio_path": {
+        "name": "Audio Path",
+        "tooltip": "Path to the audio file to load"
+      },
+      "audio_data": {
+        "name": "Audio Data",
+        "tooltip": "Existing audio data to process"
+      },
+      "target_sample_rate": {
+        "name": "Target Sample Rate",
+        "tooltip": "Desired sample rate for the output audio (8000-48000 Hz)"
+      }
+    },
+    "outputs": {
+      "audio": {
+        "name": "Audio Data",
+        "tooltip": "Loaded audio data suitable for CosyVoice2"
+      }
+    }
+  },
+  "SaveAudio": {
+    "display_name": "Save Audio",
+    "description": "Save synthesized audio to file",
+    "inputs": {
+      "audio": {
+        "name": "Audio Data",
+        "tooltip": "Audio data to save"
+      },
+      "save_path": {
+        "name": "Save Path",
+        "tooltip": "Path where the audio file will be saved"
+      }
+    },
+    "outputs": {
+      "text": {
+        "name": "File Path",
+        "tooltip": "Path to the saved audio file"
+      }
+    }
+  },
+  "CosyVoice2ModelChecker": {
+    "display_name": "CosyVoice2 Model Checker",
+    "description": "Check if CosyVoice2 model is downloaded",
+    "inputs": {
+      "model_dir": {
+        "name": "Model Directory",
+        "tooltip": "Directory to check for model existence"
+      }
+    },
+    "outputs": {
+      "is_downloaded": {
+        "name": "Is Downloaded",
+        "tooltip": "Boolean indicating if model is downloaded"
+      }
+    }
+  },
+  "CosyVoice2ModelDownloader": {
+    "display_name": "CosyVoice2 Model Downloader",
+    "description": "Download CosyVoice2 model from ModelScope",
+    "inputs": {
+      "model_type": {
+        "name": "Model Type",
+        "tooltip": "Type of CosyVoice2 model to download",
+        "options": {
+          "CosyVoice2-0.5B": "CosyVoice2-0.5B",
+          "CosyVoice-300M": "CosyVoice-300M",
+          "CosyVoice-300M-SFT": "CosyVoice-300M-SFT",
+          "CosyVoice-300M-Instruct": "CosyVoice-300M-Instruct",
+          "CosyVoice-ttsfrd": "CosyVoice-ttsfrd"
+        }
+      },
+      "local_dir": {
+        "name": "Local Directory",
+        "tooltip": "Local directory to save the downloaded model"
+      },
+      "download_ttsfrd": {
+        "name": "Download TTSFRD",
+        "tooltip": "Also download the TTSFRD resource for text processing"
+      }
+    },
+    "outputs": {
+      "model_dir": {
+        "name": "Model Directory",
+        "tooltip": "Path to the downloaded model directory"
+      }
+    }
+  },
+  "CosyVoice2SaveSpeaker": {
+    "display_name": "CosyVoice2 Save Speaker",
+    "description": "Save speaker information for zero-shot voice cloning",
+    "inputs": {
+      "model": {
+        "name": "Model",
+        "tooltip": "Loaded CosyVoice2 model"
+      },
+      "prompt_text": {
+        "name": "Prompt Text",
+        "tooltip": "Text that matches the prompt audio"
+      },
+      "prompt_audio": {
+        "name": "Prompt Audio",
+        "tooltip": "Reference audio for the speaker voice"
+      },
+      "zero_shot_spk_id": {
+        "name": "Speaker ID",
+        "tooltip": "Unique identifier for the saved speaker"
+      }
+    },
+    "outputs": {
+      "zero_shot_spk_id": {
+        "name": "Speaker ID",
+        "tooltip": "Saved speaker identifier"
+      }
+    }
+  }
+}

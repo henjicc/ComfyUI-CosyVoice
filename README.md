@@ -1,311 +1,242 @@
-[![SVG Banners](https://svg-banners.vercel.app/api?type=origin&text1=CosyVoice🤠&text2=Text-to-Speech%20💖%20Large%20Language%20Model&width=800&height=210)](https://github.com/Akshay090/svg-banners)
+# ComfyUI-CosyVoice
 
-## 👉🏻 CosyVoice 👈🏻
+ComfyUI-CosyVoice 是一个为 [ComfyUI](https://github.com/comfyanonymous/ComfyUI) 设计的自定义节点集，集成了强大的 [CosyVoice2](https://github.com/FunAudioLLM/CosyVoice) 文本到语音合成模型，为您的 AI 工作流程提供高质量的语音生成能力。
 
-**CosyVoice 3.0**: [Demos](https://funaudiollm.github.io/cosyvoice3/); [Paper](https://arxiv.org/abs/2505.17589); [CV3-Eval](https://github.com/FunAudioLLM/CV3-Eval)
+## 功能特点
 
-**CosyVoice 2.0**: [Demos](https://funaudiollm.github.io/cosyvoice2/); [Paper](https://arxiv.org/abs/2412.10117); [Modelscope](https://www.modelscope.cn/studios/iic/CosyVoice2-0.5B); [HuggingFace](https://huggingface.co/spaces/FunAudioLLM/CosyVoice2-0.5B)
+- **零样本声音克隆**：通过简短的参考音频，克隆任何人的声音
+- **指令控制**：通过文本指令控制语音的风格、方言和情感
+- **跨语言合成**：支持多种语言间的语音合成（中、英、日、韩等）
+- **流式合成**：支持低延迟的流式语音生成
+- **自动模型下载**：首次使用时自动下载所需模型
+- **完整的音频处理**：包含音频加载、处理和保存功能
 
-**CosyVoice 1.0**: [Demos](https://fun-audio-llm.github.io); [Paper](https://funaudiollm.github.io/pdf/CosyVoice_v1.pdf); [Modelscope](https://www.modelscope.cn/studios/iic/CosyVoice-300M)
+## 安装方法
 
-## Highlight🔥
+### 1. 克隆仓库
 
-**CosyVoice 2.0** has been released! Compared to version 1.0, the new version offers more accurate, more stable, faster, and better speech generation capabilities.
-### Multilingual
-- **Supported Language**: Chinese, English, Japanese, Korean, Chinese dialects (Cantonese, Sichuanese, Shanghainese, Tianjinese, Wuhanese, etc.)
-- **Crosslingual & Mixlingual**：Support zero-shot voice cloning for cross-lingual and code-switching scenarios.
-### Ultra-Low Latency
-- **Bidirectional Streaming Support**: CosyVoice 2.0 integrates offline and streaming modeling technologies.
-- **Rapid First Packet Synthesis**: Achieves latency as low as 150ms while maintaining high-quality audio output.
-### High Accuracy
-- **Improved Pronunciation**: Reduces pronunciation errors by 30% to 50% compared to CosyVoice 1.0.
-- **Benchmark Achievements**: Attains the lowest character error rate on the hard test set of the Seed-TTS evaluation set.
-### Strong Stability
-- **Consistency in Timbre**: Ensures reliable voice consistency for zero-shot and cross-language speech synthesis.
-- **Cross-language Synthesis**: Marked improvements compared to version 1.0.
-### Natural Experience
-- **Enhanced Prosody and Sound Quality**: Improved alignment of synthesized audio, raising MOS evaluation scores from 5.4 to 5.53.
-- **Emotional and Dialectal Flexibility**: Now supports more granular emotional controls and accent adjustments.
+```bash
+cd ComfyUI/custom_nodes
+git clone --recursive https://github.com/FunAudioLLM/ComfyUI-CosyVoice.git
+cd ComfyUI-CosyVoice
+```
 
-## Roadmap
+### 2. 安装依赖
 
-- [x] 2025/08
+确保您的 Python 环境已经安装了以下依赖：
 
-    - [x] Thanks to the contribution from NVIDIA Yuekai Zhang, add triton trtllm runtime support and cosyvoice2 grpo training support
+```bash
+pip install -r requirements.txt
+```
 
-- [x] 2025/07
+如果您遇到 sox 兼容性问题：
 
-    - [x] release cosyvoice 3.0 eval set
+```bash
+# Ubuntu
+apt-get install sox libsox-dev
+# CentOS
+yum install sox sox-devel
+# Windows (通过chocolatey安装)
+choco install sox
+```
 
-- [x] 2025/05
+## 使用指南
 
-    - [x] add cosyvoice 2.0 vllm support
+启动 ComfyUI 后，您可以在节点菜单中找到 `CosyVoice2` 分类下的所有节点。
 
-- [x] 2024/12
+### 基本工作流程
 
-    - [x] 25hz cosyvoice 2.0 released
+1. **加载模型**：使用 `CosyVoice2Loader` 节点加载预训练模型
+2. **准备参考音频**：使用 `LoadAudio` 节点加载用于声音克隆的参考音频
+3. **选择合成方式**：选择 `CosyVoice2ZeroShot`、`CosyVoice2Instruct` 或 `CosyVoice2CrossLingual` 节点
+4. **配置参数**：设置文本内容、语速等参数
+5. **保存结果**：使用 `SaveAudio` 节点保存生成的音频
 
-- [x] 2024/09
+### 节点详解
 
-    - [x] 25hz cosyvoice base model
-    - [x] 25hz cosyvoice voice conversion model
+#### CosyVoice2Loader
 
-- [x] 2024/08
+用于加载 CosyVoice2 模型的节点。
 
-    - [x] Repetition Aware Sampling(RAS) inference for llm stability
-    - [x] Streaming inference mode support, including kv cache and sdpa for rtf optimization
+- **参数**：
+  - `model_dir`：模型目录路径（默认：`pretrained_models/CosyVoice2-0.5B`）
+  - `load_jit`：是否加载 JIT 编译模型（默认：`False`）
+  - `load_trt`：是否加载 TensorRT 优化模型（默认：`False`）
+  - `load_vllm`：是否加载 VLLM 加速模型（默认：`False`）
+  - `fp16`：是否使用 FP16 精度（默认：`False`）
+  - `device`：运行设备（`auto`/`cpu`/`cuda`，默认：`auto`）
+  - `auto_download`：自动下载模型（默认：`True`）
+- **输出**：
+  - `model`：加载的 CosyVoice2 模型
 
-- [x] 2024/07
+#### LoadAudio
 
-    - [x] Flow matching training support
-    - [x] WeTextProcessing support when ttsfrd is not available
-    - [x] Fastapi server and client
+用于加载音频文件或处理音频数据的节点。
 
+- **参数**：
+  - `audio_path`：音频文件路径（默认：`./asset/zero_shot_prompt.wav`）
+  - `audio_data`：可选的音频数据输入
+  - `target_sample_rate`：目标采样率（8000-48000 Hz，默认：16000）
+- **输出**：
+  - `audio`：处理后的音频数据
 
-## Install
+#### SaveAudio
 
-### Clone and install
+用于保存音频文件的节点。
 
-- Clone the repo
-    ``` sh
-    git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
-    # If you failed to clone the submodule due to network failures, please run the following command until success
-    cd CosyVoice
-    git submodule update --init --recursive
-    ```
+- **参数**：
+  - `audio`：要保存的音频数据
+  - `save_path`：保存路径（默认：`./output.wav`）
+- **输出**：
+  - `path`：保存的文件路径
 
-- Install Conda: please see https://docs.conda.io/en/latest/miniconda.html
-- Create Conda env:
+#### CosyVoice2ZeroShot
 
-    ``` sh
-    conda create -n cosyvoice -y python=3.10
-    conda activate cosyvoice
-    pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
+零样本语音合成节点，用于克隆声音。
 
-    # If you encounter sox compatibility issues
-    # ubuntu
-    sudo apt-get install sox libsox-dev
-    # centos
-    sudo yum install sox sox-devel
-    ```
+- **参数**：
+  - `model`：加载的 CosyVoice2 模型
+  - `tts_text`：要合成的文本内容
+  - `prompt_text`：与参考音频匹配的文本
+  - `prompt_audio`：参考音频
+  - `zero_shot_spk_id`：说话人ID（可选）
+  - `stream`：是否启用流式合成（默认：`False`）
+  - `speed`：语速（0.5-2.0，默认：1.0）
+  - `text_frontend`：是否启用文本前端处理（默认：`True`）
+- **输出**：
+  - `audio`：合成的音频数据
 
-### Model download
+#### CosyVoice2Instruct
 
-We strongly recommend that you download our pretrained `CosyVoice2-0.5B` `CosyVoice-300M` `CosyVoice-300M-SFT` `CosyVoice-300M-Instruct` model and `CosyVoice-ttsfrd` resource.
+指令语音合成节点，通过指令控制语音风格。
 
-``` python
-# SDK模型下载
+- **参数**：
+  - `model`：加载的 CosyVoice2 模型
+  - `tts_text`：要合成的文本内容
+  - `instruct_text`：控制指令（如："用四川话说这句话"）
+  - `prompt_audio`：参考音频
+  - `zero_shot_spk_id`：说话人ID（可选）
+  - `stream`：是否启用流式合成（默认：`False`）
+  - `speed`：语速（0.5-2.0，默认：1.0）
+  - `text_frontend`：是否启用文本前端处理（默认：`True`）
+- **输出**：
+  - `audio`：合成的音频数据
+
+#### CosyVoice2CrossLingual
+
+跨语言语音合成节点，支持多种语言间的语音合成。
+
+- **参数**：
+  - `model`：加载的 CosyVoice2 模型
+  - `tts_text`：要合成的文本内容（支持多语言）
+  - `prompt_audio`：参考音频
+  - `zero_shot_spk_id`：说话人ID（可选）
+  - `stream`：是否启用流式合成（默认：`False`）
+  - `speed`：语速（0.5-2.0，默认：1.0）
+  - `text_frontend`：是否启用文本前端处理（默认：`True`）
+- **输出**：
+  - `audio`：合成的音频数据
+
+#### CosyVoice2ModelChecker
+
+检查 CosyVoice2 模型是否已下载的节点。
+
+- **参数**：
+  - `model_dir`：模型目录路径
+- **输出**：
+  - `is_downloaded`：模型是否已下载
+
+#### CosyVoice2ModelDownloader
+
+下载 CosyVoice2 模型的节点。
+
+- **参数**：
+  - `model_type`：模型类型（`CosyVoice2-0.5B`/`CosyVoice-300M`/`CosyVoice-300M-SFT`/`CosyVoice-300M-Instruct`/`CosyVoice-ttsfrd`）
+  - `local_dir`：本地保存目录
+  - `download_ttsfrd`：是否下载 TTSFRD 资源（默认：`False`）
+- **输出**：
+  - `model_dir`：下载的模型目录
+
+#### CosyVoice2SaveSpeaker
+
+保存说话人信息的节点，用于零样本声音克隆。
+
+- **参数**：
+  - `model`：加载的 CosyVoice2 模型
+  - `prompt_text`：与参考音频匹配的文本
+  - `prompt_audio`：参考音频
+  - `zero_shot_spk_id`：说话人ID
+- **输出**：
+  - `zero_shot_spk_id`：保存的说话人ID
+
+## 模型管理
+
+ComfyUI-CosyVoice 支持自动下载和管理模型。默认情况下，模型会保存在以下位置：
+
+- 如果 ComfyUI 的模型目录可用，模型将保存在 `ComfyUI/models/CosyVoice/` 目录下
+- 否则，模型将保存在当前目录的 `pretrained_models/` 目录下
+
+## 高级功能
+
+### 文本前端处理
+
+启用 `text_frontend` 参数可以获得更好的文本规范化和处理效果，特别是对于包含数字、缩写和特殊字符的文本。
+
+### 流式合成
+
+启用 `stream` 参数可以降低延迟，特别适合需要实时响应的场景。
+
+### 语速调整
+
+通过 `speed` 参数可以调整合成语音的速度，范围为 0.5（半速）到 2.0（两倍速）。
+
+## 常见问题
+
+### 1. 首次使用时模型下载失败
+
+如果自动下载失败，可以手动下载模型并放置到指定目录：
+
+```python
 from modelscope import snapshot_download
 snapshot_download('iic/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
-snapshot_download('iic/CosyVoice-300M', local_dir='pretrained_models/CosyVoice-300M')
-snapshot_download('iic/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')
-snapshot_download('iic/CosyVoice-300M-Instruct', local_dir='pretrained_models/CosyVoice-300M-Instruct')
 snapshot_download('iic/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice-ttsfrd')
 ```
 
-``` sh
-# git模型下载，请确保已安装git lfs
-mkdir -p pretrained_models
-git clone https://www.modelscope.cn/iic/CosyVoice2-0.5B.git pretrained_models/CosyVoice2-0.5B
-git clone https://www.modelscope.cn/iic/CosyVoice-300M.git pretrained_models/CosyVoice-300M
-git clone https://www.modelscope.cn/iic/CosyVoice-300M-SFT.git pretrained_models/CosyVoice-300M-SFT
-git clone https://www.modelscope.cn/iic/CosyVoice-300M-Instruct.git pretrained_models/CosyVoice-300M-Instruct
-git clone https://www.modelscope.cn/iic/CosyVoice-ttsfrd.git pretrained_models/CosyVoice-ttsfrd
-```
+### 2. 音频格式问题
 
-Optionally, you can unzip `ttsfrd` resource and install `ttsfrd` package for better text normalization performance.
+CosyVoice2 要求输入音频为 16kHz 采样率的单声道音频。节点内部会自动处理不同格式的输入，但对于最佳效果，建议提前准备符合要求的音频文件。
 
-Notice that this step is not necessary. If you do not install `ttsfrd` package, we will use wetext by default.
+### 3. 性能优化
 
-``` sh
-cd pretrained_models/CosyVoice-ttsfrd/
-unzip resource.zip -d .
-pip install ttsfrd_dependency-0.1-py3-none-any.whl
-pip install ttsfrd-0.4.2-cp310-cp310-linux_x86_64.whl
-```
+- 对于 GPU 用户，可以启用 `fp16=True` 以获得更快的推理速度
+- 对于高端 NVIDIA GPU 用户，可以尝试启用 `load_trt=True` 或 `load_vllm=True` 进一步提升性能
 
-### Basic Usage
+## 多语言支持
 
-We strongly recommend using `CosyVoice2-0.5B` for better performance.
-Follow the code below for detailed usage of each model.
+CosyVoice2 支持以下语言和方言：
+- 中文
+- 英文
+- 日文
+- 韩文
+- 中文方言（粤语、四川话、上海话、天津话、武汉话等）
 
-``` python
-import sys
-sys.path.append('third_party/Matcha-TTS')
-from cosyvoice.cli.cosyvoice import CosyVoice, CosyVoice2
-from cosyvoice.utils.file_utils import load_wav
-import torchaudio
-```
+## 免责声明
 
-#### CosyVoice2 Usage
-```python
-cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=False, load_trt=False, load_vllm=False, fp16=False)
+本项目提供的内容仅用于学术目的，旨在展示技术能力。部分示例来源于互联网，如有任何内容侵犯了您的权益，请联系我们请求删除。
 
-# NOTE if you want to reproduce the results on https://funaudiollm.github.io/cosyvoice2, please add text_frontend=False during inference
-# zero_shot usage
-prompt_speech_16k = load_wav('./asset/zero_shot_prompt.wav', 16000)
-for i, j in enumerate(cosyvoice.inference_zero_shot('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '希望你以后能够做的比我还好呦。', prompt_speech_16k, stream=False)):
-    torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
+## 引用
 
-# save zero_shot spk for future usage
-assert cosyvoice.add_zero_shot_spk('希望你以后能够做的比我还好呦。', prompt_speech_16k, 'my_zero_shot_spk') is True
-for i, j in enumerate(cosyvoice.inference_zero_shot('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '', '', zero_shot_spk_id='my_zero_shot_spk', stream=False)):
-    torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-cosyvoice.save_spkinfo()
+如果您在研究中使用了本项目，请考虑引用以下论文：
 
-# fine grained control, for supported control, check cosyvoice/tokenizer/tokenizer.py#L248
-for i, j in enumerate(cosyvoice.inference_cross_lingual('在他讲述那个荒诞故事的过程中，他突然[laughter]停下来，因为他自己也被逗笑了[laughter]。', prompt_speech_16k, stream=False)):
-    torchaudio.save('fine_grained_control_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-
-# instruct usage
-for i, j in enumerate(cosyvoice.inference_instruct2('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '用四川话说这句话', prompt_speech_16k, stream=False)):
-    torchaudio.save('instruct_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-
-# bistream usage, you can use generator as input, this is useful when using text llm model as input
-# NOTE you should still have some basic sentence split logic because llm can not handle arbitrary sentence length
-def text_generator():
-    yield '收到好友从远方寄来的生日礼物，'
-    yield '那份意外的惊喜与深深的祝福'
-    yield '让我心中充满了甜蜜的快乐，'
-    yield '笑容如花儿般绽放。'
-for i, j in enumerate(cosyvoice.inference_zero_shot(text_generator(), '希望你以后能够做的比我还好呦。', prompt_speech_16k, stream=False)):
-    torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-```
-
-#### CosyVoice2 vllm Usage
-If you want to use vllm for inference, please install `vllm==v0.9.0`. Older vllm version do not support CosyVoice2 inference.
-
-Notice that `vllm==v0.9.0` has a lot of specific requirements, for example `torch==2.7.0`. You can create a new env to in case your hardward do not support vllm and old env is corrupted.
-
-``` sh
-conda create -n cosyvoice_vllm --clone cosyvoice
-conda activate cosyvoice_vllm
-pip install vllm==v0.9.0 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
-python vllm_example.py
-```
-
-#### CosyVoice Usage
-```python
-cosyvoice = CosyVoice('pretrained_models/CosyVoice-300M-SFT', load_jit=False, load_trt=False, fp16=False)
-# sft usage
-print(cosyvoice.list_available_spks())
-# change stream=True for chunk stream inference
-for i, j in enumerate(cosyvoice.inference_sft('你好，我是通义生成式语音大模型，请问有什么可以帮您的吗？', '中文女', stream=False)):
-    torchaudio.save('sft_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-
-cosyvoice = CosyVoice('pretrained_models/CosyVoice-300M')
-# zero_shot usage, <|zh|><|en|><|jp|><|yue|><|ko|> for Chinese/English/Japanese/Cantonese/Korean
-prompt_speech_16k = load_wav('./asset/zero_shot_prompt.wav', 16000)
-for i, j in enumerate(cosyvoice.inference_zero_shot('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '希望你以后能够做的比我还好呦。', prompt_speech_16k, stream=False)):
-    torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-# cross_lingual usage
-prompt_speech_16k = load_wav('./asset/cross_lingual_prompt.wav', 16000)
-for i, j in enumerate(cosyvoice.inference_cross_lingual('<|en|>And then later on, fully acquiring that company. So keeping management in line, interest in line with the asset that\'s coming into the family is a reason why sometimes we don\'t buy the whole thing.', prompt_speech_16k, stream=False)):
-    torchaudio.save('cross_lingual_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-# vc usage
-prompt_speech_16k = load_wav('./asset/zero_shot_prompt.wav', 16000)
-source_speech_16k = load_wav('./asset/cross_lingual_prompt.wav', 16000)
-for i, j in enumerate(cosyvoice.inference_vc(source_speech_16k, prompt_speech_16k, stream=False)):
-    torchaudio.save('vc_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-
-cosyvoice = CosyVoice('pretrained_models/CosyVoice-300M-Instruct')
-# instruct usage, support <laughter></laughter><strong></strong>[laughter][breath]
-for i, j in enumerate(cosyvoice.inference_instruct('在面对挑战时，他展现了非凡的<strong>勇气</strong>与<strong>智慧</strong>。', '中文男', 'Theo \'Crimson\', is a fiery, passionate rebel leader. Fights with fervor for justice, but struggles with impulsiveness.', stream=False)):
-    torchaudio.save('instruct_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
-```
-
-#### Start web demo
-
-You can use our web demo page to get familiar with CosyVoice quickly.
-
-Please see the demo website for details.
-
-``` python
-# change iic/CosyVoice-300M-SFT for sft inference, or iic/CosyVoice-300M-Instruct for instruct inference
-python3 webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
-```
-
-#### Advanced Usage
-
-For advanced users, we have provided training and inference scripts in `examples/libritts/cosyvoice/run.sh`.
-
-#### Build for deployment
-
-Optionally, if you want service deployment,
-You can run the following steps.
-
-``` sh
-cd runtime/python
-docker build -t cosyvoice:v1.0 .
-# change iic/CosyVoice-300M to iic/CosyVoice-300M-Instruct if you want to use instruct inference
-# for grpc usage
-docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/grpc && python3 server.py --port 50000 --max_conc 4 --model_dir iic/CosyVoice-300M && sleep infinity"
-cd grpc && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
-# for fastapi usage
-docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/fastapi && python3 server.py --port 50000 --model_dir iic/CosyVoice-300M && sleep infinity"
-cd fastapi && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
-```
-
-#### Using Nvidia TensorRT-LLM for deployment
-
-Using TensorRT-LLM to accelerate cosyvoice2 llm could give 4x acceleration comparing with huggingface transformers implementation.
-To quick start:
-
-``` sh
-cd runtime/triton_trtllm
-docker compose up -d
-```
-For more details, you could check [here](https://github.com/FunAudioLLM/CosyVoice/tree/main/runtime/triton_trtllm)
-
-## Discussion & Communication
-
-You can directly discuss on [Github Issues](https://github.com/FunAudioLLM/CosyVoice/issues).
-
-You can also scan the QR code to join our official Dingding chat group.
-
-<img src="./asset/dingding.png" width="250px">
-
-## Acknowledge
-
-1. We borrowed a lot of code from [FunASR](https://github.com/modelscope/FunASR).
-2. We borrowed a lot of code from [FunCodec](https://github.com/modelscope/FunCodec).
-3. We borrowed a lot of code from [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS).
-4. We borrowed a lot of code from [AcademiCodec](https://github.com/yangdongchao/AcademiCodec).
-5. We borrowed a lot of code from [WeNet](https://github.com/wenet-e2e/wenet).
-
-## Citations
-
-``` bibtex
-@article{du2024cosyvoice,
-  title={Cosyvoice: A scalable multilingual zero-shot text-to-speech synthesizer based on supervised semantic tokens},
-  author={Du, Zhihao and Chen, Qian and Zhang, Shiliang and Hu, Kai and Lu, Heng and Yang, Yexin and Hu, Hangrui and Zheng, Siqi and Gu, Yue and Ma, Ziyang and others},
-  journal={arXiv preprint arXiv:2407.05407},
-  year={2024}
-}
-
+```bibtex
 @article{du2024cosyvoice,
   title={Cosyvoice 2: Scalable streaming speech synthesis with large language models},
-  author={Du, Zhihao and Wang, Yuxuan and Chen, Qian and Shi, Xian and Lv, Xiang and Zhao, Tianyu and Gao, Zhifu and Yang, Yexin and Gao, Changfeng and Wang, Hui and others},
+  author={Du, Zhihao and Wang, Yuxuan and Chen, Qian and others},
   journal={arXiv preprint arXiv:2412.10117},
   year={2024}
 }
-
-@article{du2025cosyvoice,
-  title={CosyVoice 3: Towards In-the-wild Speech Generation via Scaling-up and Post-training},
-  author={Du, Zhihao and Gao, Changfeng and Wang, Yuxuan and Yu, Fan and Zhao, Tianyu and Wang, Hao and Lv, Xiang and Wang, Hui and Shi, Xian and An, Keyu and others},
-  journal={arXiv preprint arXiv:2505.17589},
-  year={2025}
-}
-
-@inproceedings{lyu2025build,
-  title={Build LLM-Based Zero-Shot Streaming TTS System with Cosyvoice},
-  author={Lyu, Xiang and Wang, Yuxuan and Zhao, Tianyu and Wang, Hao and Liu, Huadai and Du, Zhihao},
-  booktitle={ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
-  pages={1--2},
-  year={2025},
-  organization={IEEE}
-}
 ```
 
-## Disclaimer
-The content provided above is for academic purposes only and is intended to demonstrate technical capabilities. Some examples are sourced from the internet. If any content infringes on your rights, please contact us to request its removal.
+## 致谢
+
+感谢 [FunAudioLLM](https://github.com/FunAudioLLM) 团队开发的 CosyVoice 模型，以及所有为本项目做出贡献的开发者。

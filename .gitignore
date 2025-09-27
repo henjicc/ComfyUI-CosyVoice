@@ -1,4 +1,5 @@
 API-Docs/
+.trae/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
