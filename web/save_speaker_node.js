@@ -12,36 +12,47 @@ app.registerExtension({
                 
                 if (message.text) {
                     // 创建显示区域
-                    const widget = this.widgets.find(w => w.name === "save_info");
-                    if (widget) {
-                        widget.value = message.text[0];
-                    } else {
+                    let widget = this.widgets.find(w => w.name === "save_info");
+                    if (!widget) {
                         // 创建新的文本显示widget
-                        const textBox = this.addDOMWidget("save_info", "customtext", 
-                            document.createElement("div"), {
-                                getValue() {
-                                    return this.element.textContent;
-                                },
-                                setValue(v) {
-                                    this.element.textContent = v;
+                        const container = document.createElement("div");
+                        const textBox = document.createElement("div");
+                        container.appendChild(textBox);
+                        
+                        widget = this.addDOMWidget("save_info", "customtext", container, {
+                            getValue() {
+                                return textBox.textContent || "";
+                            },
+                            setValue(v) {
+                                if (textBox) {
+                                    textBox.textContent = v || "";
                                 }
-                            });
+                            }
+                        });
                         
                         // 设置样式
-                        textBox.element.style.background = "#222";
-                        textBox.element.style.color = "#31EC88";
-                        textBox.element.style.padding = "10px";
-                        textBox.element.style.borderRadius = "5px";
-                        textBox.element.style.whiteSpace = "pre-wrap";
-                        textBox.element.style.overflow = "auto";
-                        textBox.element.style.maxHeight = "150px";
-                        textBox.element.style.fontSize = "12px";
-                        textBox.element.textContent = message.text[0];
+                        container.style.background = "#222";
+                        container.style.color = "#31EC88";
+                        container.style.padding = "10px";
+                        container.style.borderRadius = "5px";
+                        container.style.overflow = "auto";
+                        container.style.maxHeight = "150px";
+                        
+                        textBox.style.whiteSpace = "pre-wrap";
+                        textBox.style.fontSize = "12px";
+                        textBox.style.wordBreak = "break-word";
                         
                         // 设置widget属性
-                        textBox.serializeValue = () => {
-                            return textBox.element.textContent;
+                        widget.serializeValue = () => {
+                            return textBox.textContent || "";
                         };
+                    }
+                    
+                    // 安全地更新文本内容
+                    if (widget.element && widget.element.firstChild) {
+                        widget.element.firstChild.textContent = message.text[0];
+                    } else if (widget.element) {
+                        widget.element.textContent = message.text[0];
                     }
                     
                     // 触发节点重绘

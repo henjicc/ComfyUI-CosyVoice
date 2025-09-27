@@ -826,6 +826,12 @@ class CosyVoice2SaveSpeaker:
     def save_speaker(self, model: CosyVoice2, prompt_text: str, prompt_audio: Dict[str, Any], 
                     zero_shot_spk_id: str, prompt=None, extra_pnginfo=None):
         try:
+            # 检查说话人ID是否为空
+            if not zero_shot_spk_id or zero_shot_spk_id.strip() == "":
+                # 准备错误显示信息（使用中文）
+                error_info = f"说话人保存失败！\n\n错误信息: 说话人ID不能为空\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                return {"ui": {"text": [error_info]}, "result": ("",)}
+            
             # 获取音频和采样率
             prompt_speech_16k = prompt_audio["waveform"]
             sample_rate = prompt_audio["sample_rate"]

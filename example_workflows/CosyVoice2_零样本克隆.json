@@ -1,0 +1,201 @@
+{
+  "id": "06ea5bc3-843d-4641-b6ca-69a63634252a",
+  "revision": 0,
+  "last_node_id": 5,
+  "last_link_id": 5,
+  "nodes": [
+    {
+      "id": 3,
+      "type": "LoadAudio",
+      "pos": [
+        1210,
+        4150
+      ],
+      "size": [
+        270,
+        136
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.60",
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "henjicc_4s.wav",
+        null,
+        null
+      ]
+    },
+    {
+      "id": 1,
+      "type": "CosyVoice2Loader",
+      "pos": [
+        1210,
+        3900
+      ],
+      "size": [
+        270,
+        202
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "COSYVOICE2_MODEL",
+          "links": [
+            5
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "henjicc/ComfyUI-CosyVoice",
+        "ver": "8d073c2b41d197ce0eff62e6c9665f412b01e4ab",
+        "Node name for S&R": "CosyVoice2Loader"
+      },
+      "widgets_values": [
+        "CosyVoice2-0.5B",
+        false,
+        false,
+        false,
+        false,
+        "auto",
+        true
+      ]
+    },
+    {
+      "id": 4,
+      "type": "PreviewAudio",
+      "pos": [
+        2000,
+        3900
+      ],
+      "size": [
+        270,
+        88
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.60",
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 2,
+      "type": "CosyVoice2ZeroShot",
+      "pos": [
+        1550,
+        3900
+      ],
+      "size": [
+        400,
+        252
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "COSYVOICE2_MODEL",
+          "link": 5
+        },
+        {
+          "name": "prompt_audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "henjicc/ComfyUI-CosyVoice",
+        "ver": "8d073c2b41d197ce0eff62e6c9665f412b01e4ab",
+        "Node name for S&R": "CosyVoice2ZeroShot"
+      },
+      "widgets_values": [
+        "如果喜欢本期视频的话，不要忘了点个关注，我们下期再见，拜拜",
+        "首先做个小调查，在过去的二零二四年里，你最喜爱的软件是什么呢",
+        "无",
+        1,
+        true,
+        340887306575173,
+        "randomize"
+      ]
+    }
+  ],
+  "links": [
+    [
+      2,
+      3,
+      0,
+      2,
+      1,
+      "AUDIO"
+    ],
+    [
+      3,
+      2,
+      0,
+      4,
+      0,
+      "AUDIO"
+    ],
+    [
+      5,
+      1,
+      0,
+      2,
+      0,
+      "COSYVOICE2_MODEL"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.4420993610649961,
+      "offset": [
+        -916.1525087161899,
+        -3649.83734927222
+      ]
+    },
+    "frontendVersion": "1.26.13"
+  },
+  "version": 0.4
+}

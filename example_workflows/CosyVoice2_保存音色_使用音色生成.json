@@ -1,0 +1,332 @@
+{
+  "id": "06ea5bc3-843d-4641-b6ca-69a63634252a",
+  "revision": 0,
+  "last_node_id": 8,
+  "last_link_id": 7,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "CosyVoice2Loader",
+      "pos": [
+        1210,
+        3890
+      ],
+      "size": [
+        270,
+        202
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "COSYVOICE2_MODEL",
+          "links": [
+            5,
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "henjicc/ComfyUI-CosyVoice",
+        "ver": "8d073c2b41d197ce0eff62e6c9665f412b01e4ab",
+        "Node name for S&R": "CosyVoice2Loader"
+      },
+      "widgets_values": [
+        "CosyVoice2-0.5B",
+        false,
+        false,
+        false,
+        false,
+        "auto",
+        true
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadAudio",
+      "pos": [
+        1210,
+        3490
+      ],
+      "size": [
+        270,
+        136
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.60",
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "henjicc_4s.wav",
+        null,
+        null
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 6,
+      "type": "CosyVoice2SaveSpeaker",
+      "pos": [
+        1500,
+        3490
+      ],
+      "size": [
+        290,
+        260
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "COSYVOICE2_MODEL",
+          "link": 6
+        },
+        {
+          "name": "prompt_audio",
+          "type": "AUDIO",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "speaker_file",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "CosyVoice2 保存说话人到文件",
+      "properties": {
+        "aux_id": "henjicc/ComfyUI-CosyVoice",
+        "ver": "8d073c2b41d197ce0eff62e6c9665f412b01e4ab",
+        "Node name for S&R": "CosyVoice2SaveSpeaker"
+      },
+      "widgets_values": [
+        "首先做个小调查，在过去的二零二四年里，你最喜爱的软件是什么呢",
+        "henjicc",
+        "说话人保存成功！\n\n说话人ID: henjicc\n文件路径: D:\\AI\\ComfyUI_windows_TTS\\ComfyUI\\custom_nodes\\ComfyUI-CosyVoice\\speakers\\henjicc.pt\n保存时间: 2025-09-28 01:26:43"
+      ],
+      "color": "#c09430",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 2,
+      "type": "CosyVoice2ZeroShot",
+      "pos": [
+        1500,
+        3890
+      ],
+      "size": [
+        320,
+        252
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "COSYVOICE2_MODEL",
+          "link": 5
+        },
+        {
+          "name": "prompt_audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "henjicc/ComfyUI-CosyVoice",
+        "ver": "8d073c2b41d197ce0eff62e6c9665f412b01e4ab",
+        "Node name for S&R": "CosyVoice2ZeroShot"
+      },
+      "widgets_values": [
+        "如果喜欢本期视频的话，不要忘了点个关注，我们下期再见，拜拜",
+        "",
+        "henjicc.pt",
+        1,
+        true,
+        979929072776269,
+        "randomize"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "Note",
+      "pos": [
+        1810,
+        3490
+      ],
+      "size": [
+        310,
+        260
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "直接运行此节点来保存音色到文件\n\n接着按下 R 键来刷新，然后就可以在下面节点的说话人文件中选择保存的音色了\n\n保存完说话人之后，可以删除或禁用这里的节点"
+      ],
+      "color": "#af3535",
+      "bgcolor": "rgba(24,24,27,.9)"
+    },
+    {
+      "id": 4,
+      "type": "PreviewAudio",
+      "pos": [
+        1840,
+        3890
+      ],
+      "size": [
+        290,
+        90
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.60",
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 8,
+      "type": "Note",
+      "pos": [
+        1840,
+        4020
+      ],
+      "size": [
+        290,
+        120
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "选择说话人之后，就不用再输入提示音频和提示文本了，可以直接生成\n\n如果此时依然输入了提示音频与提示文本，则会优先使用提示音频来生成"
+      ],
+      "color": "#af3535",
+      "bgcolor": "rgba(24,24,27,.9)"
+    }
+  ],
+  "links": [
+    [
+      3,
+      2,
+      0,
+      4,
+      0,
+      "AUDIO"
+    ],
+    [
+      5,
+      1,
+      0,
+      2,
+      0,
+      "COSYVOICE2_MODEL"
+    ],
+    [
+      6,
+      1,
+      0,
+      6,
+      0,
+      "COSYVOICE2_MODEL"
+    ],
+    [
+      7,
+      3,
+      0,
+      6,
+      1,
+      "AUDIO"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "保存音色",
+      "bounding": [
+        1200,
+        3420,
+        940,
+        340
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "选择音色生成语音",
+      "bounding": [
+        1200,
+        3820,
+        940,
+        340
+      ],
+      "color": "#8A8",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.191817653772724,
+      "offset": [
+        -743.2124382396732,
+        -3289.138642881217
+      ]
+    },
+    "frontendVersion": "1.26.13"
+  },
+  "version": 0.4
+}
