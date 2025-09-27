@@ -932,56 +932,6 @@ class CosyVoice2SaveSpeaker:
             error_info = f"说话人保存失败！\n\n错误信息: {str(e)}\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
             return {"ui": {"text": [error_info]}, "result": ("",)}
 
-class CosyVoice2LoadSpeaker:
-    """加载零样本说话人信息"""
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        # 获取speakers目录下的所有.pt文件
-        speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
-        speaker_files = []
-        if os.path.exists(speakers_dir):
-            speaker_files = [f for f in os.listdir(speakers_dir) if f.endswith(".pt")]
-        
-        return {
-            "required": {
-                "model": ("COSYVOICE2_MODEL",),
-                "speaker_file": (speaker_files if speaker_files else ["none"],),
-            }
-        }
-    
-    RETURN_TYPES = ("COSYVOICE2_MODEL", "STRING")
-    RETURN_NAMES = ("model", "speaker_id")
-    FUNCTION = "load_speaker"
-    CATEGORY = "CosyVoice2/Utils"
-    
-    def load_speaker(self, model: CosyVoice2, speaker_file: str):
-        try:
-            if speaker_file == "none":
-                raise ValueError("No speaker files found")
-            
-            # 获取speakers目录路径
-            speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
-            speaker_file_path = os.path.join(speakers_dir, speaker_file)
-            
-            # 检查文件是否存在
-            if not os.path.exists(speaker_file_path):
-                raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
-            
-            # 加载说话人信息
-            speaker_data = torch.load(speaker_file_path, map_location=model.device)
-            
-            # 从文件名获取说话人ID（去掉.pt扩展名）
-            speaker_id = os.path.splitext(speaker_file)[0]
-            
-            # 将说话人信息添加到模型中
-            model.frontend.spk2info[speaker_id] = speaker_data
-            print(f"Speaker info loaded from {speaker_file_path}")
-            
-            return (model, speaker_id)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load speaker info: {str(e)}")
-
 # 添加获取说话人文件的辅助函数
 def get_speaker_files():
     """获取speakers目录下的所有.pt文件"""
@@ -1002,7 +952,6 @@ NODE_CLASS_MAPPINGS = {
     "CosyVoice2Instruct": CosyVoice2Instruct,
     "CosyVoice2CrossLingual": CosyVoice2CrossLingual,
     "CosyVoice2SaveSpeaker": CosyVoice2SaveSpeaker,
-    "CosyVoice2LoadSpeaker": CosyVoice2LoadSpeaker,
 }
 
 # 节点显示名称映射
@@ -1016,5 +965,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CosyVoice2Instruct": "CosyVoice2 Instruct",
     "CosyVoice2CrossLingual": "CosyVoice2 Cross Lingual",
     "CosyVoice2SaveSpeaker": "Save Speaker to File",
-    "CosyVoice2LoadSpeaker": "CosyVoice2 Load Speaker",
 }
