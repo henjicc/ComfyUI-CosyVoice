@@ -64,6 +64,10 @@
         "name": "Prompt Audio",
         "tooltip": "Reference audio for voice cloning"
       },
+      "speaker_file": {
+        "name": "Speaker File",
+        "tooltip": "Saved speaker information file"
+      },
       "zero_shot_spk_id": {
         "name": "Speaker ID",
         "tooltip": "Identifier for the cloned speaker"
@@ -77,8 +81,8 @@
         "tooltip": "Adjust speech speed (0.5-2.0), 1.0 is normal speed"
       },
       "text_frontend": {
-        "name": "Text Frontend",
-        "tooltip": "Enable text processing frontend"
+        "name": "Text Normalization",
+        "tooltip": "Standardize input text processing, including number conversion, punctuation handling, etc."
       }
     },
     "outputs": {
@@ -108,6 +112,10 @@
         "name": "Prompt Audio",
         "tooltip": "Optional reference audio for voice cloning"
       },
+      "speaker_file": {
+        "name": "Speaker File",
+        "tooltip": "Saved speaker information file"
+      },
       "zero_shot_spk_id": {
         "name": "Speaker ID",
         "tooltip": "Identifier for the cloned speaker"
@@ -121,8 +129,8 @@
         "tooltip": "Adjust speech speed (0.5-2.0), 1.0 is normal speed"
       },
       "text_frontend": {
-        "name": "Text Frontend",
-        "tooltip": "Enable text processing frontend"
+        "name": "Text Normalization",
+        "tooltip": "Standardize input text processing, including number conversion, punctuation handling, etc."
       }
     },
     "outputs": {
@@ -148,6 +156,10 @@
         "name": "Prompt Audio",
         "tooltip": "Reference audio for voice cloning across languages"
       },
+      "speaker_file": {
+        "name": "Speaker File",
+        "tooltip": "Saved speaker information file"
+      },
       "zero_shot_spk_id": {
         "name": "Speaker ID",
         "tooltip": "Identifier for the cloned speaker"
@@ -161,8 +173,8 @@
         "tooltip": "Adjust speech speed (0.5-2.0), 1.0 is normal speed"
       },
       "text_frontend": {
-        "name": "Text Frontend",
-        "tooltip": "Enable text processing frontend"
+        "name": "Text Normalization",
+        "tooltip": "Standardize input text processing, including number conversion, punctuation handling, etc."
       }
     },
     "outputs": {

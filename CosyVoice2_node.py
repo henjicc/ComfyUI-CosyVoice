@@ -350,15 +350,19 @@ class CosyVoice2ZeroShot:
     
     @classmethod
     def INPUT_TYPES(cls):
+        # 获取说话人文件列表
+        speaker_files = get_speaker_files()
+        speaker_options = [""] + speaker_files if speaker_files else [""]
+        
         return {
             "required": {
                 "model": ("COSYVOICE2_MODEL",),
                 "tts_text": ("STRING", {"default": "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。", "multiline": True}),
-                "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
-                "prompt_audio": ("AUDIO",),
             },
             "optional": {
-                "zero_shot_spk_id": ("STRING", {"default": ""}),
+                "prompt_text": ("STRING", {"default": "希望你以后能够做的比我还好呦。"}),
+                "prompt_audio": ("AUDIO",),
+                "speaker_file": (speaker_options, {"default": ""}),
                 "stream": ("BOOLEAN", {"default": False}),
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
@@ -370,29 +374,56 @@ class CosyVoice2ZeroShot:
     FUNCTION = "zero_shot"
     CATEGORY = "CosyVoice2/Inference"
     
-    def zero_shot(self, model: CosyVoice2, tts_text: str, prompt_text: str, 
-                 prompt_audio: Dict[str, Any], zero_shot_spk_id: str = "", 
+    def zero_shot(self, model: CosyVoice2, tts_text: str, prompt_text: str = "", 
+                 prompt_audio: Dict[str, Any] = None, speaker_file: str = "",
                  stream: bool = False, speed: float = 1.0, text_frontend: bool = True):
         try:
-            # 获取音频和采样率
-            prompt_speech_16k = prompt_audio["waveform"]
-            sample_rate = prompt_audio["sample_rate"]
+            # 初始化变量
+            prompt_speech_16k = None
+            zero_shot_spk_id = ""
             
-            # 确保音频采样率为16kHz
-            if sample_rate != 16000:
-                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
-                prompt_speech_16k = resampler(prompt_speech_16k)
+            # 如果提供了说话人文件，则加载说话人信息
+            if speaker_file and speaker_file != "":
+                # 获取说话人ID（去掉.pt扩展名）
+                zero_shot_spk_id = os.path.splitext(speaker_file)[0]
+                
+                # 确保说话人信息已加载到模型中
+                speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+                speaker_file_path = os.path.join(speakers_dir, speaker_file)
+                
+                if os.path.exists(speaker_file_path):
+                    # 加载说话人信息
+                    speaker_data = torch.load(speaker_file_path, map_location=model.device)
+                    # 将说话人信息添加到模型中
+                    model.frontend.spk2info[zero_shot_spk_id] = speaker_data
+                    print(f"Loaded speaker info from {speaker_file_path}")
+                else:
+                    raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
             
-            # 确保音频形状为[T]格式（CosyVoice期望的格式）
-            while prompt_speech_16k.dim() > 1:
-                # 持续压缩直到只剩一维
-                prompt_speech_16k = prompt_speech_16k[0]
+            # 如果提供了音频，则使用音频和文本（优先级高于保存的说话人）
+            if prompt_audio is not None:
+                # 获取音频和采样率
+                prompt_speech_16k = prompt_audio["waveform"]
+                sample_rate = prompt_audio["sample_rate"]
+                
+                # 确保音频采样率为16kHz
+                if sample_rate != 16000:
+                    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                    prompt_speech_16k = resampler(prompt_speech_16k)
+                
+                # 确保音频形状为[T]格式（CosyVoice期望的格式）
+                while prompt_speech_16k.dim() > 1:
+                    # 持续压缩直到只剩一维
+                    prompt_speech_16k = prompt_speech_16k[0]
+                
+                # 如果使用了音频，则不使用预保存的说话人ID
+                zero_shot_spk_id = ""
             
             # 执行零样本推理
             audio_generator = model.inference_zero_shot(
                 tts_text=tts_text,
                 prompt_text=prompt_text,
-                prompt_speech_16k=prompt_speech_16k,
+                prompt_speech_16k=prompt_speech_16k,  # 当zero_shot_spk_id不为空时，CosyVoice会忽略这个参数
                 zero_shot_spk_id=zero_shot_spk_id,
                 stream=stream,
                 speed=speed,
@@ -431,15 +462,19 @@ class CosyVoice2Instruct:
     
     @classmethod
     def INPUT_TYPES(cls):
+        # 获取说话人文件列表
+        speaker_files = get_speaker_files()
+        speaker_options = [""] + speaker_files if speaker_files else [""]
+        
         return {
             "required": {
                 "model": ("COSYVOICE2_MODEL",),
                 "tts_text": ("STRING", {"default": "收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。", "multiline": True}),
                 "instruct_text": ("STRING", {"default": "用四川话说这句话"}),
-                "prompt_audio": ("AUDIO",),
             },
             "optional": {
-                "zero_shot_spk_id": ("STRING", {"default": ""}),
+                "prompt_audio": ("AUDIO",),
+                "speaker_file": (speaker_options, {"default": ""}),
                 "stream": ("BOOLEAN", {"default": False}),
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
@@ -452,38 +487,110 @@ class CosyVoice2Instruct:
     CATEGORY = "CosyVoice2/Inference"
     
     def instruct(self, model: CosyVoice2, tts_text: str, instruct_text: str, 
-                prompt_audio: Dict[str, Any], zero_shot_spk_id: str = "", 
+                prompt_audio: Dict[str, Any] = None, speaker_file: str = "",
                 stream: bool = False, speed: float = 1.0, text_frontend: bool = True):
         try:
-            # 获取音频和采样率
-            prompt_speech_16k = prompt_audio["waveform"]
-            sample_rate = prompt_audio["sample_rate"]
+            # 初始化变量
+            prompt_speech_16k = None
+            zero_shot_spk_id = ""
             
-            # 确保音频采样率为16kHz
-            if sample_rate != 16000:
-                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
-                prompt_speech_16k = resampler(prompt_speech_16k)
+            # 如果提供了说话人文件，则加载说话人信息
+            if speaker_file and speaker_file != "":
+                # 获取说话人ID（去掉.pt扩展名）
+                zero_shot_spk_id = os.path.splitext(speaker_file)[0]
+                
+                # 确保说话人信息已加载到模型中
+                speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+                speaker_file_path = os.path.join(speakers_dir, speaker_file)
+                
+                if os.path.exists(speaker_file_path):
+                    # 加载说话人信息
+                    speaker_data = torch.load(speaker_file_path, map_location=model.device)
+                    # 将说话人信息添加到模型中
+                    model.frontend.spk2info[zero_shot_spk_id] = speaker_data
+                    print(f"Loaded speaker info from {speaker_file_path}")
+                else:
+                    raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
             
-            # 确保音频形状为[T]格式（CosyVoice期望的格式）
-            while prompt_speech_16k.dim() > 1:
-                # 持续压缩直到只剩一维
-                prompt_speech_16k = prompt_speech_16k[0]
+            # 如果提供了音频，则使用音频（优先级高于保存的说话人）
+            if prompt_audio is not None:
+                # 获取音频和采样率
+                prompt_speech_16k = prompt_audio["waveform"]
+                sample_rate = prompt_audio["sample_rate"]
+                
+                # 确保音频采样率为16kHz
+                if sample_rate != 16000:
+                    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                    prompt_speech_16k = resampler(prompt_speech_16k)
+                
+                # 确保音频形状为[T]格式（CosyVoice期望的格式）
+                while prompt_speech_16k.dim() > 1:
+                    # 持续压缩直到只剩一维
+                    prompt_speech_16k = prompt_speech_16k[0]
+                
+                # 如果使用了音频，则不使用预保存的说话人ID
+                zero_shot_spk_id = ""
             
-            # 执行指令推理
-            audio_generator = model.inference_instruct2(
-                tts_text=tts_text,
-                instruct_text=instruct_text,
-                prompt_speech_16k=prompt_speech_16k,
-                zero_shot_spk_id=zero_shot_spk_id,
-                stream=stream,
-                speed=speed,
-                text_frontend=text_frontend
-            )
-            
-            # 收集所有音频片段
-            audio_chunks = []
-            for chunk in audio_generator:
-                audio_chunks.append(chunk["tts_speech"])
+            # 如果使用了保存的说话人且没有提供音频，需要特殊处理指令文本
+            if zero_shot_spk_id and prompt_audio is None:
+                # 提取指令文本的token
+                instruct_text_token, instruct_text_token_len = model.frontend._extract_text_token(instruct_text + '<|endofprompt|>')
+                
+                # 临时更新保存的说话人信息中的提示文本部分
+                if zero_shot_spk_id in model.frontend.spk2info:
+                    # 保存原始的提示文本
+                    original_prompt_text = model.frontend.spk2info[zero_shot_spk_id].get('prompt_text', None)
+                    original_prompt_text_len = model.frontend.spk2info[zero_shot_spk_id].get('prompt_text_len', None)
+                    
+                    # 更新提示文本部分
+                    model.frontend.spk2info[zero_shot_spk_id]['prompt_text'] = instruct_text_token
+                    model.frontend.spk2info[zero_shot_spk_id]['prompt_text_len'] = instruct_text_token_len
+                    
+                    try:
+                        # 执行指令推理
+                        audio_generator = model.inference_instruct2(
+                            tts_text=tts_text,
+                            instruct_text=instruct_text,
+                            prompt_speech_16k=None,
+                            zero_shot_spk_id=zero_shot_spk_id,
+                            stream=stream,
+                            speed=speed,
+                            text_frontend=text_frontend
+                        )
+                        
+                        # 收集所有音频片段
+                        audio_chunks = []
+                        for chunk in audio_generator:
+                            audio_chunks.append(chunk["tts_speech"])
+                    finally:
+                        # 恢复原始的提示文本
+                        if original_prompt_text is not None:
+                            model.frontend.spk2info[zero_shot_spk_id]['prompt_text'] = original_prompt_text
+                            model.frontend.spk2info[zero_shot_spk_id]['prompt_text_len'] = original_prompt_text_len
+                        else:
+                            # 如果原来没有提示文本，则删除
+                            if 'prompt_text' in model.frontend.spk2info[zero_shot_spk_id]:
+                                del model.frontend.spk2info[zero_shot_spk_id]['prompt_text']
+                            if 'prompt_text_len' in model.frontend.spk2info[zero_shot_spk_id]:
+                                del model.frontend.spk2info[zero_shot_spk_id]['prompt_text_len']
+                else:
+                    raise RuntimeError(f"Speaker {zero_shot_spk_id} not found in spk2info")
+            else:
+                # 执行指令推理
+                audio_generator = model.inference_instruct2(
+                    tts_text=tts_text,
+                    instruct_text=instruct_text,
+                    prompt_speech_16k=prompt_speech_16k,
+                    zero_shot_spk_id=zero_shot_spk_id,
+                    stream=stream,
+                    speed=speed,
+                    text_frontend=text_frontend
+                )
+                
+                # 收集所有音频片段
+                audio_chunks = []
+                for chunk in audio_generator:
+                    audio_chunks.append(chunk["tts_speech"])
             
             # 合并所有音频片段
             if audio_chunks:
@@ -512,14 +619,18 @@ class CosyVoice2CrossLingual:
     
     @classmethod
     def INPUT_TYPES(cls):
+        # 获取说话人文件列表
+        speaker_files = get_speaker_files()
+        speaker_options = [""] + speaker_files if speaker_files else [""]
+        
         return {
             "required": {
                 "model": ("COSYVOICE2_MODEL",),
                 "tts_text": ("STRING", {"default": "在他讲述那个荒诞故事的过程中，他突然[laughter]停下来，因为他自己也被逗笑了[laughter]。", "multiline": True}),
-                "prompt_audio": ("AUDIO",),
             },
             "optional": {
-                "zero_shot_spk_id": ("STRING", {"default": ""}),
+                "prompt_audio": ("AUDIO",),
+                "speaker_file": (speaker_options, {"default": ""}),
                 "stream": ("BOOLEAN", {"default": False}),
                 "speed": ("FLOAT", {"default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1}),
                 "text_frontend": ("BOOLEAN", {"default": True}),
@@ -531,28 +642,56 @@ class CosyVoice2CrossLingual:
     FUNCTION = "cross_lingual"
     CATEGORY = "CosyVoice2/Inference"
     
-    def cross_lingual(self, model: CosyVoice2, tts_text: str, prompt_audio: Dict[str, Any], 
-                     zero_shot_spk_id: str = "", stream: bool = False, speed: float = 1.0, 
+    def cross_lingual(self, model: CosyVoice2, tts_text: str, 
+                     prompt_audio: Dict[str, Any] = None, speaker_file: str = "",
+                     stream: bool = False, speed: float = 1.0, 
                      text_frontend: bool = True):
         try:
-            # 获取音频和采样率
-            prompt_speech_16k = prompt_audio["waveform"]
-            sample_rate = prompt_audio["sample_rate"]
+            # 初始化变量
+            prompt_speech_16k = None
+            zero_shot_spk_id = ""
             
-            # 确保音频采样率为16kHz
-            if sample_rate != 16000:
-                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
-                prompt_speech_16k = resampler(prompt_speech_16k)
+            # 如果提供了说话人文件，则加载说话人信息
+            if speaker_file and speaker_file != "":
+                # 获取说话人ID（去掉.pt扩展名）
+                zero_shot_spk_id = os.path.splitext(speaker_file)[0]
+                
+                # 确保说话人信息已加载到模型中
+                speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+                speaker_file_path = os.path.join(speakers_dir, speaker_file)
+                
+                if os.path.exists(speaker_file_path):
+                    # 加载说话人信息
+                    speaker_data = torch.load(speaker_file_path, map_location=model.device)
+                    # 将说话人信息添加到模型中
+                    model.frontend.spk2info[zero_shot_spk_id] = speaker_data
+                    print(f"Loaded speaker info from {speaker_file_path}")
+                else:
+                    raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
             
-            # 确保音频形状为[T]格式（CosyVoice期望的格式）
-            while prompt_speech_16k.dim() > 1:
-                # 持续压缩直到只剩一维
-                prompt_speech_16k = prompt_speech_16k[0]
+            # 如果提供了音频，则使用音频（优先级高于保存的说话人）
+            if prompt_audio is not None:
+                # 获取音频和采样率
+                prompt_speech_16k = prompt_audio["waveform"]
+                sample_rate = prompt_audio["sample_rate"]
+                
+                # 确保音频采样率为16kHz
+                if sample_rate != 16000:
+                    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                    prompt_speech_16k = resampler(prompt_speech_16k)
+                
+                # 确保音频形状为[T]格式（CosyVoice期望的格式）
+                while prompt_speech_16k.dim() > 1:
+                    # 持续压缩直到只剩一维
+                    prompt_speech_16k = prompt_speech_16k[0]
+                
+                # 如果使用了音频，则不使用预保存的说话人ID
+                zero_shot_spk_id = ""
             
             # 执行跨语言推理
             audio_generator = model.inference_cross_lingual(
                 tts_text=tts_text,
-                prompt_speech_16k=prompt_speech_16k,
+                prompt_speech_16k=prompt_speech_16k,  # 当zero_shot_spk_id不为空时，CosyVoice会忽略这个参数
                 zero_shot_spk_id=zero_shot_spk_id,
                 stream=stream,
                 speed=speed,
@@ -766,12 +905,77 @@ class CosyVoice2SaveSpeaker:
             if not result:
                 raise RuntimeError("Failed to add zero-shot speaker")
             
-            # 保存说话人信息
-            model.save_spkinfo()
+            # 创建speakers目录（如果不存在）
+            speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+            os.makedirs(speakers_dir, exist_ok=True)
+            
+            # 保存说话人信息到节点目录下的speakers文件夹，使用.pt格式
+            speaker_file_path = os.path.join(speakers_dir, f"{zero_shot_spk_id}.pt")
+            torch.save(model.frontend.spk2info[zero_shot_spk_id], speaker_file_path)
+            print(f"Speaker info saved to {speaker_file_path}")
             
             return (model,)
         except Exception as e:
             raise RuntimeError(f"Failed to save speaker info: {str(e)}")
+
+class CosyVoice2LoadSpeaker:
+    """加载零样本说话人信息"""
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        # 获取speakers目录下的所有.pt文件
+        speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+        speaker_files = []
+        if os.path.exists(speakers_dir):
+            speaker_files = [f for f in os.listdir(speakers_dir) if f.endswith(".pt")]
+        
+        return {
+            "required": {
+                "model": ("COSYVOICE2_MODEL",),
+                "speaker_file": (speaker_files if speaker_files else ["none"],),
+            }
+        }
+    
+    RETURN_TYPES = ("COSYVOICE2_MODEL", "STRING")
+    RETURN_NAMES = ("model", "speaker_id")
+    FUNCTION = "load_speaker"
+    CATEGORY = "CosyVoice2/Utils"
+    
+    def load_speaker(self, model: CosyVoice2, speaker_file: str):
+        try:
+            if speaker_file == "none":
+                raise ValueError("No speaker files found")
+            
+            # 获取speakers目录路径
+            speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+            speaker_file_path = os.path.join(speakers_dir, speaker_file)
+            
+            # 检查文件是否存在
+            if not os.path.exists(speaker_file_path):
+                raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
+            
+            # 加载说话人信息
+            speaker_data = torch.load(speaker_file_path, map_location=model.device)
+            
+            # 从文件名获取说话人ID（去掉.pt扩展名）
+            speaker_id = os.path.splitext(speaker_file)[0]
+            
+            # 将说话人信息添加到模型中
+            model.frontend.spk2info[speaker_id] = speaker_data
+            print(f"Speaker info loaded from {speaker_file_path}")
+            
+            return (model, speaker_id)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load speaker info: {str(e)}")
+
+# 添加获取说话人文件的辅助函数
+def get_speaker_files():
+    """获取speakers目录下的所有.pt文件"""
+    speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+    speaker_files = []
+    if os.path.exists(speakers_dir):
+        speaker_files = [f for f in os.listdir(speakers_dir) if f.endswith(".pt")]
+    return speaker_files
 
 # 节点映射
 NODE_CLASS_MAPPINGS = {
@@ -784,6 +988,7 @@ NODE_CLASS_MAPPINGS = {
     "CosyVoice2Instruct": CosyVoice2Instruct,
     "CosyVoice2CrossLingual": CosyVoice2CrossLingual,
     "CosyVoice2SaveSpeaker": CosyVoice2SaveSpeaker,
+    "CosyVoice2LoadSpeaker": CosyVoice2LoadSpeaker,
 }
 
 # 节点显示名称映射
@@ -797,4 +1002,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CosyVoice2Instruct": "CosyVoice2 Instruct",
     "CosyVoice2CrossLingual": "CosyVoice2 Cross Lingual",
     "CosyVoice2SaveSpeaker": "CosyVoice2 Save Speaker",
+    "CosyVoice2LoadSpeaker": "CosyVoice2 Load Speaker",
 }

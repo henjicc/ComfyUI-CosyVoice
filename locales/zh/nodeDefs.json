@@ -64,6 +64,10 @@
         "name": "提示音频",
         "tooltip": "用于声音克隆的参考音频"
       },
+      "speaker_file": {
+        "name": "说话人文件",
+        "tooltip": "保存的说话人信息文件"
+      },
       "zero_shot_spk_id": {
         "name": "说话人ID",
         "tooltip": "克隆说话人的标识符"
@@ -77,8 +81,8 @@
         "tooltip": "调整语速（0.5-2.0），1.0 为正常速度"
       },
       "text_frontend": {
-        "name": "文本前端",
-        "tooltip": "启用文本处理前端"
+        "name": "文本规范化",
+        "tooltip": "对输入文本进行标准化处理，包括数字转换、标点符号处理等"
       }
     },
     "outputs": {
@@ -108,6 +112,10 @@
         "name": "提示音频",
         "tooltip": "可选的声音克隆参考音频"
       },
+      "speaker_file": {
+        "name": "说话人文件",
+        "tooltip": "保存的说话人信息文件"
+      },
       "zero_shot_spk_id": {
         "name": "说话人ID",
         "tooltip": "克隆说话人的标识符"
@@ -121,8 +129,8 @@
         "tooltip": "调整语速（0.5-2.0），1.0 为正常速度"
       },
       "text_frontend": {
-        "name": "文本前端",
-        "tooltip": "启用文本处理前端"
+        "name": "文本规范化",
+        "tooltip": "对输入文本进行标准化处理，包括数字转换、标点符号处理等"
       }
     },
     "outputs": {
@@ -148,6 +156,10 @@
         "name": "提示音频",
         "tooltip": "用于跨语言声音克隆的参考音频"
       },
+      "speaker_file": {
+        "name": "说话人文件",
+        "tooltip": "保存的说话人信息文件"
+      },
       "zero_shot_spk_id": {
         "name": "说话人ID",
         "tooltip": "克隆说话人的标识符"
@@ -161,8 +173,8 @@
         "tooltip": "调整语速（0.5-2.0），1.0 为正常速度"
       },
       "text_frontend": {
-        "name": "文本前端",
-        "tooltip": "启用文本处理前端"
+        "name": "文本规范化",
+        "tooltip": "对输入文本进行标准化处理，包括数字转换、标点符号处理等"
       }
     },
     "outputs": {
