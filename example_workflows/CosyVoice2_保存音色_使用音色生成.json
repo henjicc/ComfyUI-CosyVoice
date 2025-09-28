@@ -114,7 +114,7 @@
           "links": null
         }
       ],
-      "title": "CosyVoice2 保存说话人到文件",
+      "title": "CosyVoice2 保存音色到文件",
       "properties": {
         "aux_id": "henjicc/ComfyUI-CosyVoice",
         "ver": "8d073c2b41d197ce0eff62e6c9665f412b01e4ab",
@@ -123,7 +123,7 @@
       "widgets_values": [
         "首先做个小调查，在过去的二零二四年里，你最喜爱的软件是什么呢",
         "henjicc",
-        "说话人保存成功！\n\n说话人ID: henjicc\n文件路径: D:\\AI\\ComfyUI_windows_TTS\\ComfyUI\\custom_nodes\\ComfyUI-CosyVoice\\speakers\\henjicc.pt\n保存时间: 2025-09-28 01:26:43"
+        "音色保存成功！\n\n音色ID: henjicc\n文件路径: D:\\AI\\ComfyUI_windows_TTS\\ComfyUI\\custom_nodes\\ComfyUI-CosyVoice\\speakers\\henjicc.pt\n保存时间: 2025-09-28 01:26:43"
       ],
       "color": "#c09430",
       "bgcolor": "rgba(24,24,27,.9)"
@@ -197,7 +197,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "直接运行此节点来保存音色到文件\n\n接着按下 R 键来刷新，然后就可以在下面节点的说话人文件中选择保存的音色了\n\n保存完说话人之后，可以删除或禁用这里的节点"
+        "直接运行此节点来保存音色到文件\n\n接着按下 R 键来刷新，然后就可以在下面节点的音色文件中选择保存的音色了\n\n保存完音色之后，可以删除或禁用这里的节点"
       ],
       "color": "#af3535",
       "bgcolor": "rgba(24,24,27,.9)"
@@ -249,7 +249,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "选择说话人之后，就不用再输入提示音频和提示文本了，可以直接生成\n\n如果此时依然输入了提示音频与提示文本，则会优先使用提示音频来生成"
+        "选择音色之后，就不用再输入提示音频和提示文本了，可以直接生成\n\n如果此时依然输入了提示音频与提示文本，则会优先使用提示音频来生成"
       ],
       "color": "#af3535",
       "bgcolor": "rgba(24,24,27,.9)"

@@ -1,6 +1,6 @@
 import { app } from "../../../scripts/app.js";
 
-// 显示保存说话人信息的节点
+// 显示保存音色信息的节点
 app.registerExtension({
     name: "ComfyUI-CosyVoice.SaveSpeakerNode",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {

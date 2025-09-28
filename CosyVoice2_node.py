@@ -181,7 +181,7 @@ class CosyVoice2ZeroShot:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # 获取说话人文件列表
+        # 获取音色文件列表
         speaker_files = get_speaker_files()
         # 添加"无"选项作为默认选项
         speaker_options = ["无"] + speaker_files if speaker_files else ["无"]
@@ -216,28 +216,28 @@ class CosyVoice2ZeroShot:
             prompt_speech_16k = None
             zero_shot_spk_id = ""
             
-            # 处理说话人文件选项，将"无"转换为空字符串
+            # 处理音色文件选项，将"无"转换为空字符串
             actual_speaker_file = "" if speaker_file == "无" else speaker_file
             
-            # 如果提供了说话人文件，则加载说话人信息
+            # 如果提供了音色文件，则加载音色信息
             if actual_speaker_file and actual_speaker_file != "":
-                # 获取说话人ID（去掉.pt扩展名）
+                # 获取音色ID（去掉.pt扩展名）
                 zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
-                # 确保说话人信息已加载到模型中
+                # 确保音色信息已加载到模型中
                 speakers_dir = get_speakers_dir()
                 speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
-                    # 加载说话人信息
+                    # 加载音色信息
                     speaker_data = torch.load(speaker_file_path, map_location=model.device)
-                    # 将说话人信息添加到模型中
+                    # 将音色信息添加到模型中
                     model.frontend.spk2info[zero_shot_spk_id] = speaker_data
                     print(f"Loaded speaker info from {speaker_file_path}")
                 else:
                     raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
             
-            # 如果提供了音频，则使用音频和文本（优先级高于保存的说话人）
+            # 如果提供了音频，则使用音频和文本（优先级高于保存的音色）
             if prompt_audio is not None:
                 # 获取音频和采样率
                 prompt_speech_16k = prompt_audio["waveform"]
@@ -253,16 +253,16 @@ class CosyVoice2ZeroShot:
                     # 持续压缩直到只剩一维
                     prompt_speech_16k = prompt_speech_16k[0]
                 
-                # 如果使用了音频，则不使用预保存的说话人ID
+                # 如果使用了音频，则不使用预保存的音色ID
                 zero_shot_spk_id = ""
             
-            # 如果使用了保存的说话人且没有提供音频，需要特殊处理
+            # 如果使用了保存的音色且没有提供音频，需要特殊处理
             if zero_shot_spk_id and prompt_audio is None:
-                # 使用保存的说话人信息进行推理，不传递prompt_speech_16k参数
+                # 使用保存的音色信息进行推理，不传递prompt_speech_16k参数
                 audio_generator = model.inference_zero_shot(
                     tts_text=tts_text,
                     prompt_text=prompt_text,
-                    prompt_speech_16k=None,  # 使用保存的说话人时不传递音频
+                    prompt_speech_16k=None,  # 使用保存的音色时不传递音频
                     zero_shot_spk_id=zero_shot_spk_id,
                     # stream=stream,  # 隐藏流式输出选项
                     speed=speed,
@@ -314,7 +314,7 @@ class CosyVoice2Instruct:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # 获取说话人文件列表
+        # 获取音色文件列表
         speaker_files = get_speaker_files()
         # 添加"无"选项作为默认选项
         speaker_options = ["无"] + speaker_files if speaker_files else ["无"]
@@ -349,28 +349,28 @@ class CosyVoice2Instruct:
             prompt_speech_16k = None
             zero_shot_spk_id = ""
             
-            # 处理说话人文件选项，将"无"转换为空字符串
+            # 处理音色文件选项，将"无"转换为空字符串
             actual_speaker_file = "" if speaker_file == "无" else speaker_file
             
-            # 如果提供了说话人文件，则加载说话人信息
+            # 如果提供了音色文件，则加载音色信息
             if actual_speaker_file and actual_speaker_file != "":
-                # 获取说话人ID（去掉.pt扩展名）
+                # 获取音色ID（去掉.pt扩展名）
                 zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
-                # 确保说话人信息已加载到模型中
+                # 确保音色信息已加载到模型中
                 speakers_dir = get_speakers_dir()
                 speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
-                    # 加载说话人信息
+                    # 加载音色信息
                     speaker_data = torch.load(speaker_file_path, map_location=model.device)
-                    # 将说话人信息添加到模型中
+                    # 将音色信息添加到模型中
                     model.frontend.spk2info[zero_shot_spk_id] = speaker_data
                     print(f"Loaded speaker info from {speaker_file_path}")
                 else:
                     raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
             
-            # 如果提供了音频，则使用音频（优先级高于保存的说话人）
+            # 如果提供了音频，则使用音频（优先级高于保存的音色）
             if prompt_audio is not None:
                 # 获取音频和采样率
                 prompt_speech_16k = prompt_audio["waveform"]
@@ -386,15 +386,15 @@ class CosyVoice2Instruct:
                     # 持续压缩直到只剩一维
                     prompt_speech_16k = prompt_speech_16k[0]
                 
-                # 如果使用了音频，则不使用预保存的说话人ID
+                # 如果使用了音频，则不使用预保存的音色ID
                 zero_shot_spk_id = ""
             
-            # 如果使用了保存的说话人且没有提供音频，需要特殊处理指令文本
+            # 如果使用了保存的音色且没有提供音频，需要特殊处理指令文本
             if zero_shot_spk_id and prompt_audio is None:
                 # 提取指令文本的token
                 instruct_text_token, instruct_text_token_len = model.frontend._extract_text_token(instruct_text + '<|endofprompt|>')
                 
-                # 临时更新保存的说话人信息中的提示文本部分
+                # 临时更新保存的音色信息中的提示文本部分
                 if zero_shot_spk_id in model.frontend.spk2info:
                     # 保存原始的提示文本
                     original_prompt_text = model.frontend.spk2info[zero_shot_spk_id].get('prompt_text', None)
@@ -479,7 +479,7 @@ class CosyVoice2CrossLingual:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # 获取说话人文件列表
+        # 获取音色文件列表
         speaker_files = get_speaker_files()
         # 添加"无"选项作为默认选项
         speaker_options = ["无"] + speaker_files if speaker_files else ["无"]
@@ -514,28 +514,28 @@ class CosyVoice2CrossLingual:
             prompt_speech_16k = None
             zero_shot_spk_id = ""
             
-            # 处理说话人文件选项，将"无"转换为空字符串
+            # 处理音色文件选项，将"无"转换为空字符串
             actual_speaker_file = "" if speaker_file == "无" else speaker_file
             
-            # 如果提供了说话人文件，则加载说话人信息
+            # 如果提供了音色文件，则加载音色信息
             if actual_speaker_file and actual_speaker_file != "":
-                # 获取说话人ID（去掉.pt扩展名）
+                # 获取音色ID（去掉.pt扩展名）
                 zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
-                # 确保说话人信息已加载到模型中
+                # 确保音色信息已加载到模型中
                 speakers_dir = get_speakers_dir()
                 speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
-                    # 加载说话人信息
+                    # 加载音色信息
                     speaker_data = torch.load(speaker_file_path, map_location=model.device)
-                    # 将说话人信息添加到模型中
+                    # 将音色信息添加到模型中
                     model.frontend.spk2info[zero_shot_spk_id] = speaker_data
                     print(f"Loaded speaker info from {speaker_file_path}")
                 else:
                     raise FileNotFoundError(f"Speaker file not found: {speaker_file_path}")
             
-            # 如果提供了音频，则使用音频（优先级高于保存的说话人）
+            # 如果提供了音频，则使用音频（优先级高于保存的音色）
             if prompt_audio is not None:
                 # 获取音频和采样率
                 prompt_speech_16k = prompt_audio["waveform"]
@@ -551,15 +551,15 @@ class CosyVoice2CrossLingual:
                     # 持续压缩直到只剩一维
                     prompt_speech_16k = prompt_speech_16k[0]
                 
-                # 如果使用了音频，则不使用预保存的说话人ID
+                # 如果使用了音频，则不使用预保存的音色ID
                 zero_shot_spk_id = ""
             
-            # 如果使用了保存的说话人且没有提供音频，需要特殊处理
+            # 如果使用了保存的音色且没有提供音频，需要特殊处理
             if zero_shot_spk_id and prompt_audio is None:
-                # 使用保存的说话人信息进行推理，不传递prompt_speech_16k参数
+                # 使用保存的音色信息进行推理，不传递prompt_speech_16k参数
                 audio_generator = model.inference_cross_lingual(
                     tts_text=tts_text,
-                    prompt_speech_16k=None,  # 使用保存的说话人时不传递音频
+                    prompt_speech_16k=None,  # 使用保存的音色时不传递音频
                     zero_shot_spk_id=zero_shot_spk_id,
                     # stream=stream,  # 隐藏流式输出选项
                     speed=speed,
@@ -744,7 +744,7 @@ class CosyVoice2ModelDownloader:
             raise RuntimeError(f"Failed to download model {model_type}: {str(e)}")
 
 class CosyVoice2SaveSpeaker:
-    """保存零样本说话人信息"""
+    """保存零样本音色信息"""
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -771,10 +771,10 @@ class CosyVoice2SaveSpeaker:
     def save_speaker(self, model: CosyVoice2, prompt_text: str, prompt_audio: Dict[str, Any], 
                     zero_shot_spk_id: str, prompt=None, extra_pnginfo=None):
         try:
-            # 检查说话人ID是否为空
+            # 检查音色ID是否为空
             if not zero_shot_spk_id or zero_shot_spk_id.strip() == "":
                 # 准备错误显示信息（使用中文）
-                error_info = f"说话人保存失败！\n\n错误信息: 说话人ID不能为空\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                error_info = f"音色保存失败！\n\n错误信息: 音色ID不能为空\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
                 return {"ui": {"text": [error_info]}, "result": ("",)}
             
             # 获取音频和采样率
@@ -794,32 +794,32 @@ class CosyVoice2SaveSpeaker:
                 # 假设是[B, T]，取第一个批次
                 prompt_speech_16k = prompt_speech_16k[0, :]
             
-            # 添加零样本说话人
+            # 添加零样本音色
             result = model.add_zero_shot_spk(prompt_text, prompt_speech_16k, zero_shot_spk_id)
             
             if not result:
                 # 准备错误显示信息（使用中文）
-                error_info = f"说话人保存失败！\n\n错误信息: Failed to add zero-shot speaker\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                error_info = f"音色保存失败！\n\n错误信息: Failed to add zero-shot speaker\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
                 return {"ui": {"text": [error_info]}, "result": ("",)}
             # 创建speakers目录（如果不存在）
             speakers_dir = get_speakers_dir()
             
-            # 保存说话人信息到模型目录下的speakers文件夹，使用.pt格式
+            # 保存音色信息到模型目录下的speakers文件夹，使用.pt格式
             speaker_file_path = os.path.join(speakers_dir, f"{zero_shot_spk_id}.pt")
             torch.save(model.frontend.spk2info[zero_shot_spk_id], speaker_file_path)
             print(f"Speaker info saved to {speaker_file_path}")
             
             # 准备显示信息（使用中文）
-            save_info = f"说话人保存成功！\n\n说话人ID: {zero_shot_spk_id}\n文件路径: {speaker_file_path}\n保存时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+            save_info = f"音色保存成功！\n\n音色ID: {zero_shot_spk_id}\n文件路径: {speaker_file_path}\n保存时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
             
             # 返回保存的文件路径和UI信息
             return {"ui": {"text": [save_info]}, "result": (speaker_file_path,)}
         except Exception as e:
             # 准备错误显示信息（使用中文）
-            error_info = f"说话人保存失败！\n\n错误信息: {str(e)}\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+            error_info = f"音色保存失败！\n\n错误信息: {str(e)}\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
             return {"ui": {"text": [error_info]}, "result": ("",)}
 
-# 添加获取说话人文件的辅助函数
+# 添加获取音色文件的辅助函数
 def get_speaker_files():
     """获取speakers目录下的所有.pt文件"""
     # 从模型目录下的speakers文件夹读取
@@ -829,9 +829,9 @@ def get_speaker_files():
         speaker_files = [f for f in os.listdir(speakers_dir) if f.endswith(".pt")]
     return speaker_files
 
-# 添加获取说话人目录的辅助函数
+# 添加获取音色目录的辅助函数
 def get_speakers_dir():
-    """获取说话人文件目录"""
+    """获取音色文件目录"""
     # 如果ComfyUI模型目录可用，则使用模型目录下的speakers文件夹
     if COMFYUI_MODEL_DIR:
         speakers_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice", "speakers")

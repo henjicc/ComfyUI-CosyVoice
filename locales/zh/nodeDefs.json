@@ -65,12 +65,12 @@
         "tooltip": "用于声音克隆的参考音频"
       },
       "speaker_file": {
-        "name": "说话人文件",
-        "tooltip": "保存的说话人信息文件，选择\"无\"表示不使用保存的说话人"
+        "name": "音色文件",
+        "tooltip": "保存的音色信息文件，选择\"无\"表示不使用保存的音色"
       },
       "zero_shot_spk_id": {
-        "name": "说话人ID",
-        "tooltip": "克隆说话人的标识符"
+        "name": "音色ID",
+        "tooltip": "克隆音色的标识符"
       },
       "stream": {
         "name": "流式模式",
@@ -117,12 +117,12 @@
         "tooltip": "可选的声音克隆参考音频"
       },
       "speaker_file": {
-        "name": "说话人文件",
-        "tooltip": "保存的说话人信息文件，选择\"无\"表示不使用保存的说话人"
+        "name": "音色文件",
+        "tooltip": "保存的音色信息文件，选择\"无\"表示不使用保存的音色"
       },
       "zero_shot_spk_id": {
-        "name": "说话人ID",
-        "tooltip": "克隆说话人的标识符"
+        "name": "音色ID",
+        "tooltip": "克隆音色的标识符"
       },
       "stream": {
         "name": "流式模式",
@@ -165,12 +165,12 @@
         "tooltip": "用于跨语言声音克隆的参考音频"
       },
       "speaker_file": {
-        "name": "说话人文件",
-        "tooltip": "保存的说话人信息文件，选择\"无\"表示不使用保存的说话人"
+        "name": "音色文件",
+        "tooltip": "保存的音色信息文件，选择\"无\"表示不使用保存的音色"
       },
       "zero_shot_spk_id": {
-        "name": "说话人ID",
-        "tooltip": "克隆说话人的标识符"
+        "name": "音色ID",
+        "tooltip": "克隆音色的标识符"
       },
       "stream": {
         "name": "流式模式",
@@ -244,8 +244,8 @@
     }
   },
   "CosyVoice2SaveSpeaker": {
-    "display_name": "CosyVoice2 保存说话人到文件",
-    "description": "将零样本声音克隆的说话人信息保存到文件",
+    "display_name": "CosyVoice2 保存音色到文件",
+    "description": "将零样本声音克隆的音色信息保存到文件",
     "inputs": {
       "model": {
         "name": "模型",
@@ -257,17 +257,17 @@
       },
       "prompt_audio": {
         "name": "提示音频",
-        "tooltip": "说话人声音的参考音频"
+        "tooltip": "音色声音的参考音频"
       },
       "zero_shot_spk_id": {
-        "name": "说话人ID",
-        "tooltip": "保存的说话人的唯一标识符"
+        "name": "音色ID",
+        "tooltip": "保存的音色的唯一标识符"
       }
     },
     "outputs": {
       "speaker_file": {
-        "name": "说话人文件",
-        "tooltip": "已保存的说话人文件路径"
+        "name": "音色文件",
+        "tooltip": "已保存的音色文件路径"
       }
     }
   }
