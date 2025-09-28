@@ -3,9 +3,9 @@
     "display_name": "CosyVoice2 Model Loader",
     "description": "Load CosyVoice2 text-to-speech model",
     "inputs": {
-      "model_dir": {
-        "name": "Model Directory",
-        "tooltip": "Path to the CosyVoice2 model directory"
+      "model_name": {
+        "name": "Model",
+        "tooltip": "Select the CosyVoice2 model to load"
       },
       "load_jit": {
         "name": "Load JIT Model",
@@ -200,9 +200,9 @@
     "display_name": "CosyVoice2 Model Checker",
     "description": "Check if CosyVoice2 model is downloaded",
     "inputs": {
-      "model_dir": {
-        "name": "Model Directory",
-        "tooltip": "Directory to check for model existence"
+      "model_name": {
+        "name": "Model",
+        "tooltip": "Select the CosyVoice2 model to check"
       }
     },
     "outputs": {

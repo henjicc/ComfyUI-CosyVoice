@@ -121,21 +121,15 @@ class CosyVoice2Loader:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # 设置默认模型目录
-        default_model_dir = "pretrained_models/CosyVoice2-0.5B"
+        # 获取模型文件夹列表
+        model_folders = get_cosyvoice_model_folders()
         
-        # 如果ComfyUI模型目录可用，则使用它作为默认路径
-        if COMFYUI_MODEL_DIR:
-            # 创建CosyVoice模型子目录
-            cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
-            default_model_dir = os.path.join(cosyvoice_model_dir, "CosyVoice2-0.5B")
-            
-            # 确保目录存在
-            os.makedirs(cosyvoice_model_dir, exist_ok=True)
+        # 设置默认模型
+        default_model = model_folders[0] if model_folders else "CosyVoice2-0.5B"
         
         return {
             "required": {
-                "model_dir": ("STRING", {"default": default_model_dir}),
+                "model_name": (model_folders, {"default": default_model}),
             },
             "optional": {
                 "load_jit": ("BOOLEAN", {"default": False}),
@@ -152,24 +146,15 @@ class CosyVoice2Loader:
     FUNCTION = "load_model"
     CATEGORY = "CosyVoice2/Loaders"
     
-    def load_model(self, model_dir: str, load_jit: bool = False, load_trt: bool = False, 
+    def load_model(self, model_name: str, load_jit: bool = False, load_trt: bool = False, 
                   load_vllm: bool = False, fp16: bool = False, device: str = "auto",
                   auto_download: bool = True):
         try:
-            # 如果ComfyUI模型目录可用，确保模型目录在ComfyUI模型目录下
-            if COMFYUI_MODEL_DIR and not model_dir.startswith(COMFYUI_MODEL_DIR):
-                # 确定模型名称
-                model_name = os.path.basename(model_dir)
-                if not model_name:
-                    model_name = "CosyVoice2-0.5B"
-                
-                # 创建CosyVoice模型子目录
-                cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
-                os.makedirs(cosyvoice_model_dir, exist_ok=True)
-                
-                # 更新模型目录路径
-                model_dir = os.path.join(cosyvoice_model_dir, model_name)
-                print(f"Using ComfyUI model directory: {model_dir}")
+            # 构建完整的模型目录路径
+            if COMFYUI_MODEL_DIR:
+                model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice", model_name)
+            else:
+                model_dir = os.path.join("pretrained_models", model_name)
             
             # 检查模型目录是否存在
             if not os.path.exists(model_dir):
@@ -179,21 +164,19 @@ class CosyVoice2Loader:
                         from modelscope import snapshot_download
                         print(f"Model not found at {model_dir}. Attempting to download automatically...")
                         
-                        # 根据model_dir确定模型ID
-                        model_id = None
-                        if "CosyVoice2-0.5B" in model_dir:
-                            model_id = "iic/CosyVoice2-0.5B"
-                        elif "CosyVoice-300M" in model_dir:
-                            model_id = "iic/CosyVoice-300M"
-                        elif "CosyVoice-300M-SFT" in model_dir:
-                            model_id = "iic/CosyVoice-300M-SFT"
-                        elif "CosyVoice-300M-Instruct" in model_dir:
-                            model_id = "iic/CosyVoice-300M-Instruct"
-                        elif "CosyVoice-ttsfrd" in model_dir:
-                            model_id = "iic/CosyVoice-ttsfrd"
-                        else:
-                            # 尝试直接使用model_dir作为model_id
-                            model_id = model_dir
+                        # 根据model_name确定模型ID
+                        model_id_map = {
+                            "CosyVoice2-0.5B": "iic/CosyVoice2-0.5B",
+                            "CosyVoice-300M": "iic/CosyVoice-300M",
+                            "CosyVoice-300M-SFT": "iic/CosyVoice-300M-SFT",
+                            "CosyVoice-300M-Instruct": "iic/CosyVoice-300M-Instruct",
+                            "CosyVoice-ttsfrd": "iic/CosyVoice-ttsfrd",
+                        }
+                        
+                        model_id = model_id_map.get(model_name)
+                        if not model_id:
+                            # 尝试直接使用model_name作为model_id
+                            model_id = f"iic/{model_name}"
                         
                         # 下载模型
                         print(f"Downloading model {model_id}...")
@@ -202,7 +185,7 @@ class CosyVoice2Loader:
                     except ImportError:
                         raise ImportError("modelscope not installed. Please install it with 'pip install modelscope' or provide a valid model directory.")
                     except Exception as e:
-                        raise ValueError(f"Failed to download model {model_dir}: {str(e)}")
+                        raise ValueError(f"Failed to download model {model_name}: {str(e)}")
                 else:
                     raise FileNotFoundError(f"Model directory not found: {model_dir}. Enable auto_download to download automatically.")
             
@@ -668,18 +651,15 @@ class CosyVoice2ModelChecker:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # 设置默认模型目录
-        default_model_dir = "pretrained_models/CosyVoice2-0.5B"
+        # 获取模型文件夹列表
+        model_folders = get_cosyvoice_model_folders()
         
-        # 如果ComfyUI模型目录可用，则使用它作为默认路径
-        if COMFYUI_MODEL_DIR:
-            # 创建CosyVoice模型子目录
-            cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
-            default_model_dir = os.path.join(cosyvoice_model_dir, "CosyVoice2-0.5B")
+        # 设置默认模型
+        default_model = model_folders[0] if model_folders else "CosyVoice2-0.5B"
         
         return {
             "required": {
-                "model_dir": ("STRING", {"default": default_model_dir}),
+                "model_name": (model_folders, {"default": default_model}),
             }
         }
     
@@ -688,8 +668,14 @@ class CosyVoice2ModelChecker:
     FUNCTION = "check_model"
     CATEGORY = "CosyVoice2/Utils"
     
-    def check_model(self, model_dir: str):
+    def check_model(self, model_name: str):
         try:
+            # 构建完整的模型目录路径
+            if COMFYUI_MODEL_DIR:
+                model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice", model_name)
+            else:
+                model_dir = os.path.join("pretrained_models", model_name)
+            
             # 检查模型目录是否存在
             model_exists = os.path.exists(model_dir) and os.path.isdir(model_dir) and os.listdir(model_dir)
             
@@ -883,6 +869,23 @@ def get_speaker_files():
     if os.path.exists(speakers_dir):
         speaker_files = [f for f in os.listdir(speakers_dir) if f.endswith(".pt")]
     return speaker_files
+
+# 添加获取CosyVoice模型文件夹的辅助函数
+def get_cosyvoice_model_folders():
+    """获取ComfyUI模型目录下CosyVoice文件夹中的所有模型文件夹"""
+    model_folders = []
+    if COMFYUI_MODEL_DIR:
+        cosyvoice_model_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice")
+        if os.path.exists(cosyvoice_model_dir):
+            # 获取所有子目录（模型文件夹）
+            model_folders = [f for f in os.listdir(cosyvoice_model_dir) 
+                           if os.path.isdir(os.path.join(cosyvoice_model_dir, f))]
+    
+    # 如果没有找到模型文件夹，添加默认选项
+    if not model_folders:
+        model_folders = ["CosyVoice2-0.5B"]
+    
+    return model_folders
 
 # 节点映射
 NODE_CLASS_MAPPINGS = {

@@ -3,9 +3,9 @@
     "display_name": "CosyVoice2 模型加载器",
     "description": "加载 CosyVoice2 文本转语音模型",
     "inputs": {
-      "model_dir": {
-        "name": "模型目录",
-        "tooltip": "CosyVoice2 模型所在的目录路径"
+      "model_name": {
+        "name": "模型",
+        "tooltip": "选择要加载的 CosyVoice2 模型"
       },
       "load_jit": {
         "name": "加载 JIT 模型",
@@ -200,9 +200,9 @@
     "display_name": "CosyVoice2 模型检查器",
     "description": "检查 CosyVoice2 模型是否已下载",
     "inputs": {
-      "model_dir": {
-        "name": "模型目录",
-        "tooltip": "检查模型存在性的目录"
+      "model_name": {
+        "name": "模型",
+        "tooltip": "选择要检查的 CosyVoice2 模型"
       }
     },
     "outputs": {
