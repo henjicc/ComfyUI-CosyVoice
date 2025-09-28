@@ -55,8 +55,24 @@ app.registerExtension({
                         widget.element.textContent = message.text[0];
                     }
                     
+                    // 在现有高度基础上增加高度来显示信息，保持用户设置的宽度
+                    // 保存当前宽度和高度
+                    const currentWidth = this.size[0];
+                    const currentHeight = this.size[1];
+                    
+                    // 获取文本内容的高度
+                    const textContent = message.text[0];
+                    // 估算文本行数（假设每行大约15像素高）
+                    const lines = textContent.split('\n').length;
+                    const estimatedHeight = lines * 15 + 10; // 后面的数字是padding和margin的估计值
+                    
+                    // 在现有高度基础上增加文本所需的高度
+                    this.size[1] = currentHeight + estimatedHeight;
+                    // 保持用户设置的宽度
+                    this.size[0] = currentWidth;
+                    
                     // 触发节点重绘
-                    this.setSize(this.computeSize());
+                    this.setSize(this.size);
                 }
             };
         }

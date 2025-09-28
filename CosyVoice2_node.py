@@ -27,65 +27,24 @@ try:
     def get_comfyui_model_dir():
         """获取ComfyUI的模型目录"""
         try:
-            # 使用folder_paths获取模型目录
-            if hasattr(folder_paths, 'models_dir'):
-                return folder_paths.models_dir
+            # 获取节点本身的路径
+            current_dir = os.path.dirname(os.path.abspath(__file__))
             
-            # 从folder_paths获取base_path，然后构建models目录
-            if hasattr(folder_paths, 'base_path'):
-                return os.path.join(folder_paths.base_path, "models")
+            # 往上一层就是custom_nodes的路径
+            custom_nodes_dir = os.path.dirname(current_dir)
             
-            # 尝试从ComfyUI的配置中获取模型目录
-            if hasattr(comfy, 'model_management') and hasattr(comfy.model_management, 'models_directory'):
-                return comfy.model_management.models_directory
+            # 再往上一层就是ComfyUI的根目录
+            comfyui_root = os.path.dirname(custom_nodes_dir)
             
-            # 尝试从ComfyUI的路径推断模型目录
-            try:
-                import comfy_path
-                comfy_root = os.path.dirname(os.path.dirname(comfy_path.__file__))
-                models_dir = os.path.join(comfy_root, 'models')
-                
-                # 如果模型目录不存在，尝试其他可能的路径
-                if not os.path.exists(models_dir):
-                    # 尝试在ComfyUI根目录下查找models目录
-                    for root, dirs, files in os.walk(comfy_root):
-                        if 'models' in dirs:
-                            models_dir = os.path.join(root, 'models')
-                            break
-                
+            # 在ComfyUI根目录下找到models文件夹
+            models_dir = os.path.join(comfyui_root, 'models')
+            
+            # 检查models目录是否存在
+            if os.path.exists(models_dir):
                 return models_dir
-            except ImportError:
-                pass
-            
-            # 尝试从当前工作目录推断ComfyUI模型目录
-            current_dir = os.getcwd()
-            if 'ComfyUI' in current_dir:
-                # 尝试找到ComfyUI根目录
-                comfyui_root = current_dir
-                while 'ComfyUI' in comfyui_root and os.path.basename(comfyui_root) != 'ComfyUI':
-                    comfyui_root = os.path.dirname(comfyui_root)
-                
-                if os.path.basename(comfyui_root) == 'ComfyUI':
-                    models_dir = os.path.join(comfyui_root, 'models')
-                    if os.path.exists(models_dir):
-                        return models_dir
-            
-            # 尝试从环境变量获取ComfyUI模型目录
-            if 'COMFYUI_MODEL_PATH' in os.environ:
-                return os.environ['COMFYUI_MODEL_PATH']
-            
-            # 尝试常见的ComfyUI模型目录路径
-            common_paths = [
-                os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'models'),
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(current_dir))), 'models'),
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))), 'models'),
-            ]
-            
-            for path in common_paths:
-                if os.path.exists(path):
-                    return path
-            
-            return None
+            else:
+                print(f"Warning: ComfyUI models directory not found at {models_dir}")
+                return None
         except Exception as e:
             print(f"Warning: Failed to get ComfyUI model directory: {e}")
             return None
@@ -266,7 +225,7 @@ class CosyVoice2ZeroShot:
                 zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
                 # 确保说话人信息已加载到模型中
-                speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+                speakers_dir = get_speakers_dir()
                 speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
@@ -399,7 +358,7 @@ class CosyVoice2Instruct:
                 zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
                 # 确保说话人信息已加载到模型中
-                speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+                speakers_dir = get_speakers_dir()
                 speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
@@ -564,7 +523,7 @@ class CosyVoice2CrossLingual:
                 zero_shot_spk_id = os.path.splitext(actual_speaker_file)[0]
                 
                 # 确保说话人信息已加载到模型中
-                speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+                speakers_dir = get_speakers_dir()
                 speaker_file_path = os.path.join(speakers_dir, actual_speaker_file)
                 
                 if os.path.exists(speaker_file_path):
@@ -843,10 +802,9 @@ class CosyVoice2SaveSpeaker:
                 error_info = f"说话人保存失败！\n\n错误信息: Failed to add zero-shot speaker\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
                 return {"ui": {"text": [error_info]}, "result": ("",)}
             # 创建speakers目录（如果不存在）
-            speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
-            os.makedirs(speakers_dir, exist_ok=True)
+            speakers_dir = get_speakers_dir()
             
-            # 保存说话人信息到节点目录下的speakers文件夹，使用.pt格式
+            # 保存说话人信息到模型目录下的speakers文件夹，使用.pt格式
             speaker_file_path = os.path.join(speakers_dir, f"{zero_shot_spk_id}.pt")
             torch.save(model.frontend.spk2info[zero_shot_spk_id], speaker_file_path)
             print(f"Speaker info saved to {speaker_file_path}")
@@ -864,11 +822,26 @@ class CosyVoice2SaveSpeaker:
 # 添加获取说话人文件的辅助函数
 def get_speaker_files():
     """获取speakers目录下的所有.pt文件"""
-    speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+    # 从模型目录下的speakers文件夹读取
+    speakers_dir = get_speakers_dir()
     speaker_files = []
     if os.path.exists(speakers_dir):
         speaker_files = [f for f in os.listdir(speakers_dir) if f.endswith(".pt")]
     return speaker_files
+
+# 添加获取说话人目录的辅助函数
+def get_speakers_dir():
+    """获取说话人文件目录"""
+    # 如果ComfyUI模型目录可用，则使用模型目录下的speakers文件夹
+    if COMFYUI_MODEL_DIR:
+        speakers_dir = os.path.join(COMFYUI_MODEL_DIR, "CosyVoice", "speakers")
+    else:
+        # 否则使用节点目录下的speakers文件夹
+        speakers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "speakers")
+    
+    # 确保目录存在
+    os.makedirs(speakers_dir, exist_ok=True)
+    return speakers_dir
 
 # 添加获取CosyVoice模型文件夹的辅助函数
 def get_cosyvoice_model_folders():
